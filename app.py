@@ -62,16 +62,16 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-    try:
-        remove('database.db')
-    except FileNotFoundError:
-        print("Не существует")
-
-    if DEV:
-        if not await my_db.is_exist():
-            await my_db.initialize()
-    if not await my_db.query_one(User, id="0"):
-        await triangle_init(my_db)
+    # try:
+    #     remove('database.db')
+    # except FileNotFoundError:
+    #     print("Не существует")
+    #
+    # if DEV:
+    #     if not await my_db.is_exist():
+    #         await my_db.initialize()
+    # if not await my_db.query_one(User, id="0"):
+    #     await triangle_init(my_db)
     await dp.start_polling(bot)
 
 
