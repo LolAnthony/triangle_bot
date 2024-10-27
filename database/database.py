@@ -108,6 +108,14 @@ class Database:
     async def add_user(self, user):
         self.add_instance(user)
 
+    async def get_room_id_by_number(self, room_number: int):
+        room = await self.query_one(Room, number=room_number)
+        return room.id
+
+    async def get_room_number_by_id(self, room_id: int):
+        room = await self.query_one(Room, id=room_id)
+        return room.number
+
     async def is_exist(self):
         async with self.engine.connect() as conn:
             return await conn.run_sync(self._check_tables_exist)
