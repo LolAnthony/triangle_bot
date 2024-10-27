@@ -99,6 +99,15 @@ class Database:
                 print(f"Error querying one data: {e}")
                 return None
 
+    async def get_user(self, user_id):
+        return self.query_one(User, id=user_id)
+
+    async def get_user_role(self, user_id):
+        return self.query_one(Role.name, id=user_id)
+
+    async def add_user(self, user):
+        await self.add_instance(user)
+
     async def is_exist(self):
         async with self.engine.connect() as conn:
             return await conn.run_sync(self._check_tables_exist)

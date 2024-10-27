@@ -18,6 +18,7 @@ from database.triangle_init import triangle_init
 from keyboards.admin_keyboard import main_admin_keyboard
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from keyboards.resident_keyboard import main_resident_keyboard
+from keyboards.unregistered_user_keyboard import main_unregistered_user_keyboard
 from handlers import admin, supervisor, resident
 load_dotenv()
 
@@ -25,6 +26,8 @@ load_dotenv()
 TOKEN = getenv("TOKEN")
 DEV = getenv("DEV") == "TRUE"
 CONNECTION_STRING = getenv("CONNECTION_STRING")
+
+my_db = Database(CONNECTION_STRING)
 
 # Диспетчер
 dp = Dispatcher()
@@ -38,21 +41,20 @@ async def command_start_handler(message: Message) -> None:
     """
     This handler receives messages with `/start` command
     """
-    # TODO проверка на роли, переделать из БД
-    if message.from_user.id in ADMINS:
+    if my_db.get_user_role(message.from_user.id) == 'admin':
         await message.answer(f"Привет админ, {html.bold(message.from_user.full_name)}!",
                              reply_markup=main_admin_keyboard)
-    elif message.from_user.id in SUPERVISOR:
+    elif my_db.get_user_role(message.from_user.id) == 'supervisor':
         await message.answer(f"Привет староста, {html.bold(message.from_user.full_name)}!",
                              reply_markup=main_supervisor_keyboard)
+    elif my_db.get_user_role(message.from_user.id) == 'resident':
+        await message.answer(f"Привет резидент, {html.bold(message.from_user.full_name)}!", reply_markup=main_resident_keyboard)
     else:
-        await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!", reply_markup=main_resident_keyboard)
+        await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!", reply_markup=main_unregistered_user_keyboard)
 
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-    my_db = Database(CONNECTION_STRING)
 
     remove('database.db')
     if DEV:
@@ -60,7 +62,6 @@ async def main() -> None:
             await my_db.initialize()
     await triangle_init(my_db)
     await dp.start_polling(bot)
-    print(get_user_by_id(1))
 
 
 if __name__ == "__main__":
