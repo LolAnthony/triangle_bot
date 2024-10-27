@@ -1,8 +1,9 @@
 from aiogram import Router, F
-from aiogram.types import Message, ContentType
+from aiogram.types import Message, ContentType, InputMediaPhoto, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from keyboards.supervisor_keyboard import report_supervisor_keyboard
 
 router = Router()
 storage = MemoryStorage()
@@ -34,10 +35,14 @@ async def handle_photos(message: Message, state: FSMContext):
 
     # Проверяем, получили ли мы все 4 фотографии
     if len(photos) == 4:
-        # Отправляем все фотографии пользователю с ID 930555164
+        # Формируем список InputMediaPhoto для отправки медиагруппой
+        media_group = [InputMediaPhoto(media=photo_id) for photo_id in photos]
+
+        # TODO получение id старосты этажа
+        # Отправляем медиагруппу и инлайн-кнопки пользователю с ID 930555164
         user_id = 930555164
-        for photo_id in photos:
-            await message.bot.send_photo(chat_id=user_id, photo=photo_id)
+        await message.bot.send_media_group(chat_id=user_id, media=media_group,)
+        await message.bot.send_message(chat_id=user_id, text="Результат уборки", reply_markup=report_supervisor_keyboard)
 
         await message.answer("Все фотографии отправлены.")
         await state.clear()  # Очищаем состояние после завершения

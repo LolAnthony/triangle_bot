@@ -70,3 +70,13 @@ async def handle_schedule_file(message: Message, state: FSMContext):
             print(f"Не удалось удалить файл {temp_file_path}: {e}")
 
         await state.clear()
+
+
+@router.message(F.text == "Получить текущее расписание")
+async def upload_schedule(message: Message, state: FSMContext):
+    # TODO проверка на старосту, переделать из БД
+    if message.from_user.id in SUPERVISORS:
+        # TODO получение текущего расписания из БД
+        await message.answer(
+            "Текущее расписание",
+        )
