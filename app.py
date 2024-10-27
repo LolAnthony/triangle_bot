@@ -9,6 +9,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardMarkup
 import sys
 from keyboards.admin_keyboard import main_admin_keyboard
+from keyboards.supervisor_keyboard import main_supervisor_keyboard
 
 load_dotenv()
 
@@ -32,7 +33,6 @@ async def command_start_handler(message: Message) -> None:
     elif message.from_user.id in SUPERVISOR:
         await message.answer(f"Привет староста, {html.bold(message.from_user.full_name)}!",
                              reply_markup=main_supervisor_keyboard)
-
     else:
         await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!")
 
