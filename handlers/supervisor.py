@@ -6,6 +6,8 @@ import pandas as pd
 import os
 import tempfile
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
+from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty
+from datetime import datetime
 
 router = Router()
 SUPERVISORS = [930555164]
@@ -53,12 +55,21 @@ async def handle_schedule_file(message: Message, state: FSMContext):
             duty_date = row[1]
             schedule_data.append({"room_number": room_number, "duty_date": duty_date})
 
-        # TODO ЗАГРУЗКА РАСПИСАНИЯ В БД
+        add_duties = [
+            Duty(
+                room_id=await my_db.get_room_id_by_number(duty["room_number"]),
+                date=duty["duty_date"],
+            ) for duty in schedule_data
+        ]
+
+        for duty in add_duties:
+            await my_db.add_instance(duty)
 
         # Ответ с подтверждением
-        await message.answer(f"Расписание успешно загружено и обработано: {schedule_data}")
+        await message.answer(f"Расписание успешно загружено и обработано.")
 
     except Exception as e:
+        print(e)
         await message.answer("Произошла ошибка при обработке файла. Убедитесь, что формат файла корректный.")
 
     finally:
@@ -75,10 +86,15 @@ async def handle_schedule_file(message: Message, state: FSMContext):
 @router.message(F.text == "Получить текущее расписание")
 async def upload_schedule(message: Message, state: FSMContext):
     # TODO проверка на старосту, переделать из БД
+    # TODO проверка на этаж с которого получаем расписание
     if message.from_user.id in SUPERVISORS:
-        # TODO получение текущего расписания из БД
+        schedule = await my_db.query(Duty)
+        text = ""
+        for duty in schedule:
+            formatted_date = duty.date.strftime("%d.%m.%Y")
+            text += f"{formatted_date}: {await my_db.get_room_number_by_id(duty.room_id)}\n"
         await message.answer(
-            "Текущее расписание",
+            "Текущее расписание:\n" + text,
         )
 
 
