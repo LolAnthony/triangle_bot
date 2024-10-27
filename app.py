@@ -62,10 +62,10 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-    # try:
-    #     remove('database.db')
-    # except FileNotFoundError:
-    #     print("Не существует")
+    try:
+        remove('database.db')
+    except FileNotFoundError:
+        print("Не существует")
 
     if DEV:
         if not await my_db.is_exist():

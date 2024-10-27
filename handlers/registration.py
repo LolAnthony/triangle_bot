@@ -15,12 +15,11 @@ class FormStates(StatesGroup):
     waiting_for_surname = State()
 
 
-
-
 @router.message(F.text == "Зарегистрироваться")
 async def message(message: Message, state: FSMContext):
     await message.answer("Введите Имя")
     await state.set_state(FormStates.waiting_for_name)
+
 
 @router.message(F.text, FormStates.waiting_for_name)
 async def message(message: Message, state: FSMContext):
@@ -28,22 +27,28 @@ async def message(message: Message, state: FSMContext):
     await message.answer("Введите Фамилию")
     await state.set_state(FormStates.waiting_for_surname)
 
+
 @router.message(F.text, FormStates.waiting_for_surname)
-async def message(message: Message,  state: FSMContext):
+async def message(message: Message, state: FSMContext):
     surname = message.text
     user_data = await state.get_data()
-    add_user = User (
-        name = user_data.get("name", ''),
-        surname = surname,
-        tgid = message.from_user.id,
-        role_id = 3
-    )
-    add_room_user = RoomUser (
-        room_id = user_data.get("room_id", -1),
-        user_id = message.from_user.id,
-    )
+    name = user_data.get("name", '')
+    room_id = user_data.get("room_id", -1)
 
-    await my_db.add_instance(add_user)
-    await my_db.add_instance(add_room_user)
-    await message.answer("Вы успешно зарегистрировались!")
+    add_user = User(
+        name=name,
+        surname=surname,
+        tgid=message.from_user.id,
+        role_id=3
+    )
+    add_room_user = RoomUser(
+        room_id=room_id,
+        user_id=message.from_user.id,
+    )
+    if room_id != -1:
+        await my_db.add_instance(add_user)
+        await my_db.add_instance(add_room_user)
+        await message.answer("Вы успешно зарегистрировались!")
+    else:
+        await message.answer("Не удалось привязать к комнате!")
     await state.clear()
