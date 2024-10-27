@@ -18,8 +18,8 @@ async def triangle_init(db):
         await db.add_instance(add_role)
 
     users = (
-        ('Егор', 'Голубев', 930555164, 0),
-        ('Антон', 'Развадский', 123123123, 0)
+        ('Егор', 'Голубев', 930555164, 1),
+        ('Антон', 'Развадский', 123123123, 1)
     )
     for user in users:
         add_user = User (
@@ -38,7 +38,7 @@ async def triangle_init(db):
         )
         await db.add_instance(add_room)
 
-    key_room = [(room_id, ''.join(random.choices(string.ascii_letters, k=50))) for room_id in range(96)]
+    key_room = [(room_id, ''.join(random.choices(string.ascii_letters, k=50))) for room_id in range(1, 97)]
     for key in key_room:
         add_key = RoomInit (
             room_id = key[0],
