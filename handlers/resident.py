@@ -44,7 +44,8 @@ async def handle_photos(message: Message, state: FSMContext):
         await message.bot.send_media_group(chat_id=user_id, media=media_group,)
         await message.bot.send_message(chat_id=user_id, text="Результат уборки", reply_markup=report_supervisor_keyboard)
 
-        await message.answer("Все фотографии отправлены.")
+        # TODO оповещение всех участников комнаты и изменение статус is_sent сегодняшней уборки в БД
+        await message.answer("Отчет об уборке отправлен")
         await state.clear()  # Очищаем состояние после завершения
     else:
         await message.answer(f"Вы отправили {len(photos)} из 4 фотографий. Продолжайте отправлять.")

@@ -13,3 +13,6 @@ report_supervisor_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Подтвердить", callback_data="confirm")],
     [InlineKeyboardButton(text="Отклонить", callback_data="reject")]
 ])
+
+
+
