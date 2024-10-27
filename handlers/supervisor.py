@@ -10,7 +10,6 @@ from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomU
 from datetime import datetime
 
 router = Router()
-SUPERVISORS = [930555164]
 
 
 class ScheduleUploadStates(StatesGroup):
@@ -19,8 +18,8 @@ class ScheduleUploadStates(StatesGroup):
 
 @router.message(F.text == "Загрузить расписание")
 async def upload_schedule(message: Message, state: FSMContext):
-    # TODO проверка на старосту, переделать из БД
-    if message.from_user.id in SUPERVISORS:
+    user_role = await my_db.get_user_role(message.from_user.id)
+    if user_role == 'supervisor':
         await message.answer(
             "Пришлите расписание в виде Excel таблицы, формат таблицы должен быть такой, как в прикрепленном файле:",
         )
@@ -85,9 +84,9 @@ async def handle_schedule_file(message: Message, state: FSMContext):
 
 @router.message(F.text == "Получить текущее расписание")
 async def upload_schedule(message: Message, state: FSMContext):
-    # TODO проверка на старосту, переделать из БД
     # TODO проверка на этаж с которого получаем расписание
-    if message.from_user.id in SUPERVISORS:
+    user_role = await my_db.get_user_role(message.from_user.id)
+    if user_role == 'supervisor':
         schedule = await my_db.query(Duty)
         text = ""
         for duty in schedule:
