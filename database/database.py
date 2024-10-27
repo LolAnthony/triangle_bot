@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
@@ -82,18 +82,18 @@ class Database:
                 print(f"Error while adding instance: {e}")
 
     async def query(self, model, **kwargs):
-        async with self.get_session() as session:
+        async for session in self.get_session():
             try:
-                result = await session.execute(session.query(model).filter_by(**kwargs))
+                result = await session.execute(select(model).filter_by(**kwargs))
                 return result.scalars().all()
             except SQLAlchemyError as e:
                 print(f"Error querying data: {e}")
                 return []
 
     async def query_one(self, model, **kwargs):
-        async with self.get_session() as session:
+        async for session in self.get_session():
             try:
-                result = await session.execute(session.query(model).filter_by(**kwargs))
+                result = await session.execute(select(model).filter_by(**kwargs))
                 return result.scalars().first()
             except SQLAlchemyError as e:
                 print(f"Error querying one data: {e}")
@@ -106,7 +106,7 @@ class Database:
         return self.query_one(Role.name, id=user_id)
 
     async def add_user(self, user):
-        await self.add_instance(user)
+        self.add_instance(user)
 
     async def is_exist(self):
         async with self.engine.connect() as conn:
@@ -121,3 +121,8 @@ class Database:
 
 def get_user_by_id(user_id):
     return User(id=user_id)
+
+
+CONNECTION_STRING = getenv("CONNECTION_STRING")
+
+my_db = Database(CONNECTION_STRING)
