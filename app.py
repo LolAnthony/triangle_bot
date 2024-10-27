@@ -14,6 +14,7 @@ import sys
 from database.database import Database
 from keyboards.admin_keyboard import main_admin_keyboard
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
+from keyboards.resident_keyboard import main_resident_keyboard
 from handlers import admin, supervisor, resident
 load_dotenv()
 
@@ -42,7 +43,7 @@ async def command_start_handler(message: Message) -> None:
         await message.answer(f"Привет староста, {html.bold(message.from_user.full_name)}!",
                              reply_markup=main_supervisor_keyboard)
     else:
-        await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!")
+        await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!", reply_markup=main_resident_keyboard)
 
 
 async def main() -> None:
