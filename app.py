@@ -1,5 +1,7 @@
+from os import getenv
+
 from dotenv import load_dotenv
-import os
+from os import getenv
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, html
@@ -8,13 +10,17 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message, InlineKeyboardMarkup
 import sys
+
+from database.database import Database
 from keyboards.admin_keyboard import main_admin_keyboard
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from handlers import admin, supervisor, resident
 load_dotenv()
 
 # Получить значение токена
-TOKEN = os.getenv("TOKEN")
+TOKEN = getenv("TOKEN")
+DEV = getenv("DEV") == "TRUE"
+CONNECTION_STRING = getenv("CONNECTION_STRING")
 
 # Диспетчер
 dp = Dispatcher()
@@ -41,6 +47,12 @@ async def command_start_handler(message: Message) -> None:
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+    my_db = Database(CONNECTION_STRING)
+
+    if DEV:
+        if not await my_db.is_exist():
+            await my_db.initialize()
 
     await dp.start_polling(bot)
 
