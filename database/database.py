@@ -100,13 +100,15 @@ class Database:
                 return None
 
     async def get_user(self, user_id):
-        return self.query_one(User, id=user_id)
+        return await self.query_one(User, id=user_id)
 
-    async def get_user_role(self, user_id):
-        return self.query_one(Role.name, id=user_id)
+    async def get_user_role(self, telegram_id):
+        user = await self.query_one(User, tgid=telegram_id)
+        role = await self.query_one(Role, id=user.role_id)
+        return role.name
 
     async def add_user(self, user):
-        self.add_instance(user)
+        await self.add_instance(user)
 
     async def get_room_id_by_number(self, room_number: int):
         room = await self.query_one(Room, number=room_number)
