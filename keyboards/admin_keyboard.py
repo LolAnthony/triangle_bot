@@ -11,3 +11,4 @@ choose_floor_keyboard = ReplyKeyboardMarkup(keyboard=[
 
 
 def create_choose_room_keyboard(floor: int) -> ReplyKeyboardMarkup:
+    pass
