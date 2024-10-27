@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, Document
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, Document, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 import pandas as pd
@@ -70,3 +70,29 @@ async def handle_schedule_file(message: Message, state: FSMContext):
             print(f"Не удалось удалить файл {temp_file_path}: {e}")
 
         await state.clear()
+
+
+@router.message(F.text == "Получить текущее расписание")
+async def upload_schedule(message: Message, state: FSMContext):
+    # TODO проверка на старосту, переделать из БД
+    if message.from_user.id in SUPERVISORS:
+        # TODO получение текущего расписания из БД
+        await message.answer(
+            "Текущее расписание",
+        )
+
+
+# Обработчик для нажатия кнопки "Подтвердить"
+@router.callback_query(F.data == "confirm")
+async def on_confirm(callback_query: CallbackQuery):
+    # TODO оповещение всем участникам комнаты о принятой уборке
+    await callback_query.answer("Результат подтвержден.")
+    await callback_query.message.edit_text("Результат уборки был подтвержден.")
+
+
+# Обработчик для нажатия кнопки "Отклонить"
+@router.callback_query(F.data == "reject")
+async def on_reject(callback_query: CallbackQuery):
+    # TODO оповещение всем участникам комнаты об отклоненной уборке
+    await callback_query.answer("Результат отклонен.")
+    await callback_query.message.edit_text("Результат уборки был отклонен.")
