@@ -17,8 +17,13 @@ class FormStates(StatesGroup):
 
 @router.message(F.text == "Зарегистрироваться")
 async def message(message: Message, state: FSMContext):
-    await message.answer("Введите Имя")
-    await state.set_state(FormStates.waiting_for_name)
+    user_data = await state.get_data()
+    room_id = user_data.get("room_id", -1)
+    if room_id == -1:
+        await message.answer("Не удалось привязать к комнате!")
+    else:
+        await message.answer("Введите Имя")
+        await state.set_state(FormStates.waiting_for_name)
 
 
 @router.message(F.text, FormStates.waiting_for_name)
