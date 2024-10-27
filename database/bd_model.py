@@ -1,21 +1,20 @@
-from SQLAlchemy import Connection, Column, Integer, String, Boolean, ForeignKey, Date, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date
 
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import declarative_base
 
-from database.connection import engine
+from connection import engine
 
-Base = declarative_base
+Base = declarative_base()
 
 
 ######## User 
-class Role(base):
+class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
     description = Column(String(100))
 
-class User(base):
+class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
@@ -25,41 +24,41 @@ class User(base):
 
 
 ######## Rooms
-class Room(base):
+class Room(Base):
     __tablename__ = 'rooms'
     id = Column(Integer, primary_key=True)
     number = Column(Integer)
     floor = Column(Integer)
 
-class RoomUser(base):
+class RoomUser(Base):
     __tablename__ = 'rooms_users'
     id = Column(Integer, primary_key=True)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
-class RoomInit(base):
+class RoomInit(Base):
     __tablename__ = 'rooms_inits'
     id = Column(Integer, primary_key=True)
     key = Column(String(256))
 
 
 ######## Duty
-class Duty(base):
+class Duty(Base):
     __tablename__ = 'duties'
     id = Column(Integer, primary_key=True)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     date = Column(Date)
 
-class DutyRoom(base):
+class DutyRoom(Base):
     __tablename__ = 'duties_rooms'
     id = Column(Integer, primary_key=True)
-    duty_id = Column(Integer, ForeignKey('duty.id'), nullable=False)
+    duty_id = Column(Integer, ForeignKey('duties.id'), nullable=False)
     is_approved = Column(Boolean)
     is_sent = Column(Boolean)
 
 
 ######## Disciplinary
-class Discipline(base):
+class Discipline(Base):
     __tablename__ = 'disciplines'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)

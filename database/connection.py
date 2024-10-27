@@ -1,6 +1,10 @@
-from SQLAlchemy import create_engine
+from sqlalchemy import create_engine
 
 from dotenv import load_dotenv
-import os
+from os import getenv
 
-engine = create_engine(os.getenv('DATABASE_ENGINE_STRING'))
+load_dotenv()
+
+connection_string = getenv('DATABASE_ENGINE_STRING')
+
+engine = create_engine(connection_string)
