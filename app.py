@@ -31,7 +31,7 @@ dp = Dispatcher()
 dp.include_routers(admin.router, supervisor.router, resident.router)
 
 ADMINS = []
-SUPERVISOR = [930555164]
+SUPERVISOR = []
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:

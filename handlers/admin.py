@@ -15,4 +15,4 @@ SUPERVISORS = [930555164]
 async def start_add_supervisor(message: Message):
     # TODO проверка на админа, переделать из БД
     if message.from_user.id in ADMINS:
-        await message.answer("Введите никнейм пользователя, например:\n@nsstnc", reply_markup=ReplyKeyboardRemove())
+        await message.answer("Введите никнейм пользователя, например:\n@nsstnc")
