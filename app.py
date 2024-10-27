@@ -1,4 +1,6 @@
-from os import getenv
+from os import getenv, remove
+
+from database.database import get_user_by_id
 
 from dotenv import load_dotenv
 from os import getenv
@@ -12,6 +14,7 @@ from aiogram.types import Message, InlineKeyboardMarkup
 import sys
 
 from database.database import Database
+from database.triangle_init import triangle_init
 from keyboards.admin_keyboard import main_admin_keyboard
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from keyboards.resident_keyboard import main_resident_keyboard
@@ -51,11 +54,13 @@ async def main() -> None:
 
     my_db = Database(CONNECTION_STRING)
 
+    remove('database.db')
     if DEV:
         if not await my_db.is_exist():
             await my_db.initialize()
-
+    await triangle_init(my_db)
     await dp.start_polling(bot)
+    print(get_user_by_id(1))
 
 
 if __name__ == "__main__":

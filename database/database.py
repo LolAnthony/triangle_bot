@@ -41,6 +41,7 @@ class RoomUser(Base):
 class RoomInit(Base):
     __tablename__ = 'rooms_inits'
     id = Column(Integer, primary_key=True)
+    room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     key = Column(String(256))
 
 ######## Duty
@@ -72,9 +73,9 @@ class Database:
             yield session
 
     async def add_instance(self, instance):
-        async with self.get_session() as session:
+        async for session in self.get_session():
             try:
-                await session.add(instance)
+                session.add(instance)
                 await session.commit()
             except SQLAlchemyError as e:
                 await session.rollback()
@@ -108,3 +109,6 @@ class Database:
         expected_tables = [table.name for table in Base.metadata.sorted_tables]
 
         return all(table in table_names for table in expected_tables)
+
+def get_user_by_id(user_id):
+    return User(id=user_id)
