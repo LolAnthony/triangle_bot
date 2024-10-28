@@ -52,7 +52,6 @@ async def command_start_handler(message: Message, command: CommandObject, state:
     elif not get_user_by_id(message.from_user.id):
         await message.answer(f"Неверный ключ комнаты")
     user_role = await my_db.get_user_role(message.from_user.id)
-    print(user_role)
     if user_role == 'admin':
         await message.answer(f"Доброго времени суток Админ, {html.bold(message.from_user.full_name)}!",
                              reply_markup=main_admin_keyboard)
@@ -79,7 +78,7 @@ async def check_and_send_notifications(bot: Bot):
             is_sent=False
         )
         await my_db.add_instance(add_duty_room)
-
+        ans = await my_db.get_supervisor_tgid_by_resident_tgid(930555164)
         await asyncio.sleep(86400)  # проверка расписания каждые 24 часа
         # await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
 

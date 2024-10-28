@@ -159,9 +159,7 @@ class Database:
             return user
 
     async def get_schedule_for_date(self, date: datetime.date):
-        print(date)
         duty = await self.query_one(Duty, date=date)
-        print(duty)
         room_id = duty.room_id
         room_number = await self.get_room_number_by_id(room_id=room_id)
         users = await self.query(RoomUser, room_id=room_id)
@@ -173,6 +171,21 @@ class Database:
             "date": date,
         }
 
+    async def get_supervisor_tgid_by_resident_tgid(self, resident_id):
+        async for session in self.get_session():
+            room_user = await self.query_one(RoomUser, user_id=resident_id)
+            room_id = room_user.room_id
+            room = await self.query_one(Room, id=room_id)
+            floor = room.floor
+            supervisors = await session.execute(
+                select(User)
+                .join(RoomUser, RoomUser.user_id == User.tgid)
+                .join(Room, Room.id == RoomUser.room_id)
+                .filter(User.role_id == 2, Room.floor == floor)
+            )
+            supervisors = supervisors.scalars().all()
+            supervisors_id = [i.tgid for i in supervisors] if len(supervisors) > 1 else supervisors[0].tgid
+            return supervisors_id
 
 def get_user_by_id(user_id):
     return User(id=user_id)
