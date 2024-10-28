@@ -159,7 +159,9 @@ class Database:
             return user
 
     async def get_schedule_for_date(self, date: datetime.date):
+        print(date)
         duty = await self.query_one(Duty, date=date)
+        print(duty)
         room_id = duty.room_id
         room_number = await self.get_room_number_by_id(room_id=room_id)
         users = await self.query(RoomUser, room_id=room_id)
@@ -170,6 +172,18 @@ class Database:
             "users": [user.user_id for user in users] if len(users) > 0 else [],
             "date": date,
         }
+
+    async def get_current_duty_room_id(self):
+        now = datetime.now()
+        schedule = await my_db.get_schedule_for_date(now.date())
+        duty_room = await my_db.query_one(DutyRoom, duty_id=schedule['duty_id'])
+
+        return duty_room.id
+
+    async def change_report_sent_status(self, duty_room_id):
+        # TODO
+        pass
+
 
     async def get_supervisor_tgid_by_resident_tgid(self, resident_id):
         async for session in self.get_session():

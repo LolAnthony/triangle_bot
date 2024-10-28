@@ -4,6 +4,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.supervisor_keyboard import report_supervisor_keyboard
+from datetime import datetime
+from database.database import my_db, DutyRoom
 
 router = Router()
 storage = MemoryStorage()
@@ -40,11 +42,17 @@ async def handle_photos(message: Message, state: FSMContext):
 
         # TODO получение id старосты этажа
         # Отправляем медиагруппу и инлайн-кнопки пользователю с ID 930555164
-        user_id = 930555164
-        await message.bot.send_media_group(chat_id=user_id, media=media_group,)
-        await message.bot.send_message(chat_id=user_id, text="Результат уборки", reply_markup=report_supervisor_keyboard)
+        supervisor_id = 930555164
+
+        await message.bot.send_media_group(chat_id=supervisor_id, media=media_group,)
+        await message.bot.send_message(chat_id=supervisor_id, text="Результат уборки", reply_markup=report_supervisor_keyboard)
 
         # TODO оповещение всех участников комнаты и изменение статус is_sent сегодняшней уборки в БД
+
+        current_duty_room_id = my_db.get_current_duty_room_id()
+
+        await my_db.change_report_sent_status(current_duty_room_id)
+
         await message.answer("Отчет об уборке отправлен")
         await state.clear()  # Очищаем состояние после завершения
     else:
