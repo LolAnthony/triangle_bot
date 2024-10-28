@@ -79,7 +79,7 @@ async def check_and_send_notifications(bot: Bot):
             )
             await my_db.add_instance(add_duty_room)
 
-        await asyncio.sleep(100)  # проверка расписания каждые 24 часа
+        await asyncio.sleep(24*60*60)  # проверка расписания каждые 24 часа
         # await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
 
 

@@ -4,6 +4,7 @@ from database.database import my_db, Room
 
 main_admin_buttons = [
     [KeyboardButton(text="Добавить старосту")],
+    [KeyboardButton(text="Добавить комнату")],
 ]
 main_admin_keyboard = ReplyKeyboardMarkup(keyboard=main_admin_buttons, resize_keyboard=True)
 

@@ -131,6 +131,11 @@ async def upload_schedule(message: Message, state: FSMContext):
         await message.answer("Выберите комнату",
                              reply_markup=await create_choose_room_keyboard_for_qr(floor_number))
 
+    #TODO убрать нахер это
+    if user_role == 'admin':
+        floor_number = 2
+        await message.answer("Выберите комнату",
+                             reply_markup=await create_choose_room_keyboard_for_qr(floor_number))
 
 @router.callback_query(lambda c: c.data.startswith("set_room_qr:"))
 async def set_room(callback_query: CallbackQuery):
