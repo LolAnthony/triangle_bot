@@ -17,12 +17,19 @@ class FormStates(StatesGroup):
 
 @router.message(F.text == "Отправить результат уборки")
 async def start_add_supervisor(message: Message, state: FSMContext):
-    await state.set_state(FormStates.waiting_for_photos)
-    await message.answer("Отправьте 4 фотографии:\n"
-                         "1. Фото убранных плит\n"
-                         "2. Фото убранных раковин\n"
-                         "3. Фото стола с микроволновкой\n"
-                         "4. Общий план убранной кухни со стороны входа")
+    current_duty_room_id = await my_db.get_current_duty_room_id()
+
+    duty_room = await my_db.query_one(DutyRoom, duty_id=current_duty_room_id)
+
+    if duty_room.is_sent:
+        await message.answer("Результат по вашей уборке уже был отправлен")
+    else:
+        await state.set_state(FormStates.waiting_for_photos)
+        await message.answer("Отправьте 4 фотографии:\n"
+                             "1. Фото убранных плит\n"
+                             "2. Фото убранных раковин\n"
+                             "3. Фото стола с микроволновкой\n"
+                             "4. Общий план убранной кухни со стороны входа")
 
 
 @router.message(FormStates.waiting_for_photos, F.content_type == ContentType.PHOTO)
@@ -40,20 +47,22 @@ async def handle_photos(message: Message, state: FSMContext):
         # Формируем список InputMediaPhoto для отправки медиагруппой
         media_group = [InputMediaPhoto(media=photo_id) for photo_id in photos]
 
-        # TODO получение id старосты этажа
         # Отправляем медиагруппу и инлайн-кнопки пользователю с ID 930555164
-        supervisor_id = 930555164
+        supervisor_id = await my_db.get_supervisor_tgid_by_resident_tgid(message.from_user.id)
 
-        await message.bot.send_media_group(chat_id=supervisor_id, media=media_group,)
-        await message.bot.send_message(chat_id=supervisor_id, text="Результат уборки", reply_markup=report_supervisor_keyboard)
+        await message.bot.send_media_group(chat_id=supervisor_id, media=media_group, )
+        await message.bot.send_message(chat_id=supervisor_id, text="Результат уборки",
+                                       reply_markup=report_supervisor_keyboard)
 
-        # TODO оповещение всех участников комнаты и изменение статус is_sent сегодняшней уборки в БД
-
-        current_duty_room_id = my_db.get_current_duty_room_id()
+        current_duty_room_id = await my_db.get_current_duty_room_id()
 
         await my_db.change_report_sent_status(current_duty_room_id)
 
-        await message.answer("Отчет об уборке отправлен")
+        schedule = await my_db.get_schedule_for_date(datetime.now().date())
+
+        for user_tgid in schedule['users']:
+            await message.bot.send_message(chat_id=user_tgid, text="Отчет об уборке отправлен")
+
         await state.clear()  # Очищаем состояние после завершения
     else:
         await message.answer(f"Вы отправили {len(photos)} из 4 фотографий. Продолжайте отправлять.")

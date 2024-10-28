@@ -174,16 +174,28 @@ class Database:
         }
 
     async def get_current_duty_room_id(self):
+        # TODO сделать получение текущей уборки по нужному этажу
         now = datetime.now()
         schedule = await my_db.get_schedule_for_date(now.date())
         duty_room = await my_db.query_one(DutyRoom, duty_id=schedule['duty_id'])
 
         return duty_room.id
 
-    async def change_report_sent_status(self, duty_room_id):
-        # TODO
-        pass
+    async def change_report_sent_status(self, duty_id):
+        async for session in self.get_session():
+            duty_room = await self.query_one(DutyRoom, duty_id=duty_id)
+            duty_room.is_sent = not duty_room.is_sent
+            await session.merge(duty_room)
+            await session.commit()
+            return duty_room
 
+    async def change_report_approved_status(self, duty_id):
+        async for session in self.get_session():
+            duty_room = await self.query_one(DutyRoom, duty_id=duty_id)
+            duty_room.is_approved = not duty_room.is_approved
+            await session.merge(duty_room)
+            await session.commit()
+            return duty_room
 
     async def get_supervisor_tgid_by_resident_tgid(self, resident_id):
         async for session in self.get_session():
@@ -200,6 +212,7 @@ class Database:
             supervisors = supervisors.scalars().all()
             supervisors_id = [i.tgid for i in supervisors] if len(supervisors) > 1 else supervisors[0].tgid
             return supervisors_id
+
 
 def get_user_by_id(user_id):
     return User(id=user_id)
