@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from dotenv import load_dotenv
+from magic_filter import AttrDict
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
@@ -159,19 +160,20 @@ class Database:
             return user
 
     async def get_schedule_for_date(self, date: datetime.date):
-        print(date)
-        duty = await self.query_one(Duty, date=date)
-        print(duty)
-        room_id = duty.room_id
-        room_number = await self.get_room_number_by_id(room_id=room_id)
-        users = await self.query(RoomUser, room_id=room_id)
+        try:
+            duty = await self.query_one(Duty, date=date)
+            room_id = duty.room_id
+            room_number = await self.get_room_number_by_id(room_id=room_id)
+            users = await self.query(RoomUser, room_id=room_id)
 
-        return {
-            "duty_id": duty.id,
-            "room_number": room_number,
-            "users": [user.user_id for user in users] if len(users) > 0 else [],
-            "date": date,
-        }
+            return {
+                "duty_id": duty.id,
+                "room_number": room_number,
+                "users": [user.user_id for user in users] if len(users) > 0 else [],
+                "date": date,
+            }
+        except AttributeError:
+            print("Нет расписания")
 
     async def get_current_duty_room_id(self):
         # TODO сделать получение текущей уборки по нужному этажу
@@ -181,17 +183,17 @@ class Database:
 
         return duty_room.id
 
-    async def change_report_sent_status(self, duty_id):
+    async def change_report_sent_status(self, duty_room_id):
         async for session in self.get_session():
-            duty_room = await self.query_one(DutyRoom, duty_id=duty_id)
+            duty_room = await self.query_one(DutyRoom, id=duty_room_id)
             duty_room.is_sent = not duty_room.is_sent
             await session.merge(duty_room)
             await session.commit()
             return duty_room
 
-    async def change_report_approved_status(self, duty_id):
+    async def change_report_approved_status(self, duty_room_id):
         async for session in self.get_session():
-            duty_room = await self.query_one(DutyRoom, duty_id=duty_id)
+            duty_room = await self.query_one(DutyRoom, id=duty_room_id)
             duty_room.is_approved = not duty_room.is_approved
             await session.merge(duty_room)
             await session.commit()

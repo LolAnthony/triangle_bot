@@ -1,7 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 main_supervisor_buttons = [
-    [KeyboardButton(text="Добавить комнату")],
+    #[KeyboardButton(text="Добавить комнату")],
     [KeyboardButton(text="Загрузить расписание")],
     [KeyboardButton(text="Получить текущее расписание")],
 ]

@@ -67,35 +67,35 @@ async def check_and_send_notifications(bot: Bot):
     while True:
         now = datetime.now()
         schedule = await my_db.get_schedule_for_date(now.date())  # запрос расписания на текущую дату
+        if schedule:
+            for user_tgid in schedule['users']:
+                message_text = f"Напоминание‼️\nВаша комната сегодня убирается"  # текст уведомления
+                await bot.send_message(chat_id=user_tgid, text=message_text)
 
-        for user_tgid in schedule['users']:
-            message_text = f"Напоминание‼️\nВаша комната сегодня убирается"  # текст уведомления
-            await bot.send_message(chat_id=user_tgid, text=message_text)
+            add_duty_room = DutyRoom(
+                duty_id=schedule['duty_id'],
+                is_approved=False,
+                is_sent=False
+            )
+            await my_db.add_instance(add_duty_room)
 
-        add_duty_room = DutyRoom(
-            duty_id=schedule['duty_id'],
-            is_approved=False,
-            is_sent=False
-        )
-        await my_db.add_instance(add_duty_room)
-
-        await asyncio.sleep(86400)  # проверка расписания каждые 24 часа
+        await asyncio.sleep(100)  # проверка расписания каждые 24 часа
         # await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
 
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp.startup.register(partial(check_and_send_notifications, bot))
-    # try:
-    #     remove('database.db')
-    # except FileNotFoundError:
-    #     print("Не существует")
-    #
-    # if DEV:
-    #     if not await my_db.is_exist():
-    #         await my_db.initialize()
-    # if not await my_db.query_one(User, id="0"):
-    #     await triangle_init(my_db)
+    asyncio.create_task(check_and_send_notifications(bot))
+    try:
+        remove('database.db')
+    except FileNotFoundError:
+        print("Не существует")
+
+    if DEV:
+        if not await my_db.is_exist():
+            await my_db.initialize()
+    if not await my_db.query_one(User, id="0"):
+        await triangle_init(my_db)
     await dp.start_polling(bot)
 
 
