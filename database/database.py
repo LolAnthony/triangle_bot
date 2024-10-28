@@ -129,6 +129,26 @@ class Database:
 
         return all(table in table_names for table in expected_tables)
 
+    async def get_users_in_room(self, room_id):
+        async for session in self.get_session():
+            try:
+                room_users_result = await session.execute(select(RoomUser.user_id).filter_by(room_id=room_id))
+                room_users = room_users_result.scalars().all()
+                result = await session.execute(select(User).filter(User.tgid.in_(room_users)))
+                return result.scalars().all()
+            except SQLAlchemyError as e:
+                print(f"Error querying data: {e}")
+                return []
+
+    async def set_user_role(self, user_id, role_id):
+        async for session in self.get_session():
+            user = await self.query_one(User, id=user_id)
+            user.role_id = role_id
+            await session.merge(user)
+            await session.commit()
+            return user
+
+
 def get_user_by_id(user_id):
     return User(id=user_id)
 
