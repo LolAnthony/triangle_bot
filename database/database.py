@@ -1,5 +1,7 @@
 from datetime import datetime
+from io import BytesIO
 
+import qrcode
 from dotenv import load_dotenv
 from magic_filter import AttrDict
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
@@ -214,6 +216,16 @@ class Database:
             supervisors = supervisors.scalars().all()
             supervisors_id = [i.tgid for i in supervisors] if len(supervisors) > 1 else supervisors[0].tgid
             return supervisors_id
+
+    async def get_qrcode_for_room(self, room_id):
+        room_init = await self.query_one(RoomInit, room_id=room_id)
+        room_key = room_init.key
+        url_key = f"https://t.me/@mospolytech_residence_bot?start={room_key}"
+        qr = qrcode.make(url_key)
+        img_buffer = BytesIO()
+        qr.save(img_buffer, format="PNG")
+        img_buffer.seek(0)
+        return img_buffer
 
 
 def get_user_by_id(user_id):
