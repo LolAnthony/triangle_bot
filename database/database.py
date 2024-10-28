@@ -173,6 +173,18 @@ class Database:
             "date": date,
         }
 
+    async def get_current_duty_room_id(self):
+        now = datetime.now()
+        schedule = await my_db.get_schedule_for_date(now.date())
+        duty_room = await my_db.query_one(DutyRoom, duty_id=schedule['duty_id'])
+
+        return duty_room.id
+
+    async def change_report_sent_status(self, duty_room_id):
+        # TODO
+        pass
+
+
 
 def get_user_by_id(user_id):
     return User(id=user_id)
