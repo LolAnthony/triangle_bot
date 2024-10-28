@@ -14,7 +14,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, InlineKeyboardMarkup
 import sys
-
+from datetime import datetime
 from database.database import Database
 from database.triangle_init import triangle_init
 from keyboards.admin_keyboard import main_admin_keyboard
@@ -22,6 +22,7 @@ from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from keyboards.resident_keyboard import main_resident_keyboard
 from keyboards.unregistered_user_keyboard import main_unregistered_user_keyboard
 from handlers import admin, supervisor, resident, registration
+from functools import partial
 load_dotenv()
 
 # Получить значение токена
@@ -60,9 +61,25 @@ async def command_start_handler(message: Message, command: CommandObject, state:
         await message.answer(f"Привет резидент, {html.bold(message.from_user.full_name)}!", reply_markup=main_resident_keyboard)
 
 
+async def check_and_send_notifications(bot: Bot):
+    while True:
+        now = datetime.now()
+        schedule = await my_db.get_schedule_for_today(now.date())  # запрос расписания на текущую дату
+
+        # schedule надо вернуть в формате {date, users, room_number}
+
+        for entry in schedule:
+            user_id = entry.user_id
+            message_text = f"Напоминание: {entry.text}"  # текст уведомления
+            await bot.send_message(chat_id=user_id, text=message_text)
+
+        # await asyncio.sleep(86400)  # проверка расписания каждые 24 часа
+        await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
+
+
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
+    dp.startup.register(partial(check_and_send_notifications, bot))
     # try:
     #     remove('database.db')
     # except FileNotFoundError:
