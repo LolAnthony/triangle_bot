@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -10,12 +12,14 @@ DEV = getenv('DEV')
 
 Base = declarative_base()
 
+
 ######## User
 class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
     description = Column(String(100))
+
 
 class User(Base):
     __tablename__ = 'users'
@@ -25,6 +29,7 @@ class User(Base):
     tgid = Column(Integer)
     role_id = Column(Integer, ForeignKey('roles.id'), nullable=False)
 
+
 ######## Rooms
 class Room(Base):
     __tablename__ = 'rooms'
@@ -32,17 +37,20 @@ class Room(Base):
     number = Column(Integer)
     floor = Column(Integer)
 
+
 class RoomUser(Base):
     __tablename__ = 'rooms_users'
     id = Column(Integer, primary_key=True)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
+
 class RoomInit(Base):
     __tablename__ = 'rooms_inits'
     id = Column(Integer, primary_key=True)
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     key = Column(String(256))
+
 
 ######## Duty
 class Duty(Base):
@@ -51,12 +59,14 @@ class Duty(Base):
     room_id = Column(Integer, ForeignKey('rooms.id'), nullable=False)
     date = Column(Date)
 
+
 class DutyRoom(Base):
     __tablename__ = 'duties_rooms'
     id = Column(Integer, primary_key=True)
     duty_id = Column(Integer, ForeignKey('duties.id'), nullable=False)
     is_approved = Column(Boolean)
     is_sent = Column(Boolean)
+
 
 ######## Database
 class Database:
@@ -147,6 +157,21 @@ class Database:
             await session.merge(user)
             await session.commit()
             return user
+
+    async def get_schedule_for_date(self, date: datetime.date):
+        print(date)
+        duty = await self.query_one(Duty, date=date)
+        print(duty)
+        room_id = duty.room_id
+        room_number = await self.get_room_number_by_id(room_id=room_id)
+        users = await self.query(RoomUser, room_id=room_id)
+
+        return {
+            "duty_id": duty.id,
+            "room_number": room_number,
+            "users": [user.user_id for user in users] if len(users) > 0 else [],
+            "date": date,
+        }
 
 
 def get_user_by_id(user_id):
