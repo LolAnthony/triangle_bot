@@ -1,5 +1,6 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, Document, CallbackQuery
+from aiogram.types import Message, ReplyKeyboardRemove, FSInputFile, Document, CallbackQuery, InputFile, \
+    BufferedInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 import pandas as pd
@@ -8,6 +9,8 @@ import tempfile
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty
 from datetime import datetime
+
+from keyboards.supervisor_keyboard import create_choose_room_keyboard_for_qr
 
 router = Router()
 
@@ -118,3 +121,23 @@ async def on_reject(callback_query: CallbackQuery):
 
     await callback_query.answer("Результат отклонен.")
     await callback_query.message.edit_text("Результат уборки был отклонен.")
+
+
+@router.message(F.text == "Добавить комнату")
+async def upload_schedule(message: Message, state: FSMContext):
+    user_role = await my_db.get_user_role(message.from_user.id)
+    if user_role == 'supervisor':
+        floor_number = await my_db.get_floor_by_resident_tgid(message.from_user.id)
+        await message.answer("Выберите комнату",
+                             reply_markup=await create_choose_room_keyboard_for_qr(floor_number))
+
+
+@router.callback_query(lambda c: c.data.startswith("set_room_qr:"))
+async def set_room(callback_query: CallbackQuery):
+    room_number = int(callback_query.data.split(":")[1])
+    await callback_query.answer("Комната выбрана")
+    await callback_query.message.answer("QR код для добавления участников комнаты:")
+    qr = await my_db.get_qrcode_for_room(room_number)
+    qr_image = BufferedInputFile(qr.read(), filename="qr_code.png")
+    await callback_query.message.bot.send_photo(chat_id=callback_query.message.chat.id, photo=qr_image)
+

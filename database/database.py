@@ -220,12 +220,18 @@ class Database:
     async def get_qrcode_for_room(self, room_id):
         room_init = await self.query_one(RoomInit, room_id=room_id)
         room_key = room_init.key
-        url_key = f"https://t.me/@mospolytech_residence_bot?start={room_key}"
+        url_key = f"https://t.me/mospolytech_residence_bot?start={room_key}"
         qr = qrcode.make(url_key)
         img_buffer = BytesIO()
         qr.save(img_buffer, format="PNG")
         img_buffer.seek(0)
         return img_buffer
+
+    async def get_floor_by_resident_tgid(self, resident_id):
+        room_user = await self.query_one(RoomUser, user_id=resident_id)
+        room_id = room_user.room_id
+        room = await self.query_one(Room, id=room_id)
+        return room.floor
 
 
 def get_user_by_id(user_id):
