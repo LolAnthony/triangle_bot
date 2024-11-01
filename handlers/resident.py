@@ -16,8 +16,9 @@ class FormStates(StatesGroup):
 
 
 @router.message(F.text == "Отправить результат уборки")
-async def start_add_supervisor(message: Message, state: FSMContext):
-    current_duty_room_id = await my_db.get_current_duty_room_id()
+async def wait_duty_photos(message: Message, state: FSMContext):
+    floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
+    current_duty_room_id = await my_db.get_current_duty_room_id(floor)
 
     duty_room = await my_db.query_one(DutyRoom, duty_id=current_duty_room_id)
 
@@ -53,8 +54,8 @@ async def handle_photos(message: Message, state: FSMContext):
         await message.bot.send_media_group(chat_id=supervisor_id, media=media_group, )
         await message.bot.send_message(chat_id=supervisor_id, text="Результат уборки",
                                        reply_markup=report_supervisor_keyboard)
-
-        current_duty_room_id = await my_db.get_current_duty_room_id()
+        floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
+        current_duty_room_id = await my_db.get_current_duty_room_id(floor)
 
         await my_db.change_report_sent_status(current_duty_room_id)
 
