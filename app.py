@@ -64,25 +64,40 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 
 
 async def check_and_send_notifications(bot: Bot):
+    times_for_send = ["03:00", "03:05", "03:10"]
+
     while True:
         now = datetime.now()
-        print(now.date())
-        schedule = await my_db.get_schedule_for_date(now.date())  # запрос расписания на текущую дату
+        current_time_str = now.strftime("%H:%M")
 
-        if schedule:
-            for user_tgid in schedule['users']:
-                message_text = f"Напоминание‼️\nВаша комната сегодня убирается"  # текст уведомления
-                await bot.send_message(chat_id=user_tgid, text=message_text)
-            for duty_id in schedule['duties']:
-                add_duty_room = DutyRoom(
-                    duty_id=duty_id,
-                    is_approved=False,
-                    is_sent=False
+        if current_time_str in times_for_send:
+            schedule = await my_db.get_schedule_for_date(now.date())
+
+            if schedule:
+                for user_tgid in schedule['users']:
+                    message_text = "Напоминание‼️\nВаша комната сегодня убирается"
+                    await bot.send_message(chat_id=user_tgid, text=message_text)
+
+                for duty_id in schedule['duties']:
+                    add_duty_room = DutyRoom(
+                        duty_id=duty_id,
+                        is_approved=False,
+                        is_sent=False
+                    )
+                    await my_db.add_instance(add_duty_room)
+            await asyncio.sleep(60)
+        else:
+            next_check_time = min(
+                (
+                    datetime.combine(now.date(), datetime.strptime(t, "%H:%M").time())
+                    if datetime.strptime(t, "%H:%M").time() > now.time()
+                    else datetime.combine(now.date() + timedelta(days=1), datetime.strptime(t, "%H:%M").time())
                 )
-                await my_db.add_instance(add_duty_room)
+                for t in times_for_send
+            )
 
-        await asyncio.sleep(24*60*60)  # проверка расписания каждые 24 часа
-        # await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
+            wait_time = (next_check_time - now).total_seconds()
+            await asyncio.sleep(wait_time)
 
 
 async def main() -> None:
