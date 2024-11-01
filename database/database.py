@@ -165,18 +165,16 @@ class Database:
         try:
             duties = await self.query(Duty, date=date)
             room_ids = [duty.room_id for duty in duties]
-            room_number = [
-                await self.get_room_number_by_id(room_id=room_id)
-                for room_id in room_ids
-            ]
-            users = [
-                await self.query(RoomUser, room_id=room_id)
-                for room_id in room_ids
-            ]
 
+            users = []
+            for room_id in room_ids:
+                room_users = await self.query(RoomUser, room_id=room_id)
+                for room_user in room_users:
+                    users.append(room_user)
+            print(room_ids)
+            print(users)
             return {
-                "duty_id": [duty.id for duty in duties] if len(duties) > 0 else [],
-                "room_number": [room.number for room in room_number] if len(room_number) > 0 else [],
+                "duties": [duty.id for duty in duties] if len(duties) > 0 else [],
                 "users": [user.user_id for user in users] if len(users) > 0 else [],
                 "date": date,
             }
@@ -184,11 +182,12 @@ class Database:
             print("Нет расписания")
 
     async def get_current_duty_room_id(self, floor:int = -1):
-        now = datetime.now()
+        now = datetime.now().date()
         async for session in self.get_session():
             duty_room_request = await session.execute(
-                select(Room)
-                .join(Duty, Duty.room_id == Room.id)
+                select(DutyRoom)
+                .join(Duty, DutyRoom.duty_id == Duty.id)
+                .join(Room, Room.id == Duty.room_id)
                 .filter(Room.floor == floor, Duty.date == now)
             )
             duty_room = duty_room_request.scalars().first()

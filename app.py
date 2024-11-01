@@ -66,18 +66,20 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 async def check_and_send_notifications(bot: Bot):
     while True:
         now = datetime.now()
+        print(now.date())
         schedule = await my_db.get_schedule_for_date(now.date())  # запрос расписания на текущую дату
+
         if schedule:
             for user_tgid in schedule['users']:
                 message_text = f"Напоминание‼️\nВаша комната сегодня убирается"  # текст уведомления
                 await bot.send_message(chat_id=user_tgid, text=message_text)
-
-            add_duty_room = DutyRoom(
-                duty_id=schedule['duty_id'],
-                is_approved=False,
-                is_sent=False
-            )
-            await my_db.add_instance(add_duty_room)
+            for duty_id in schedule['duties']:
+                add_duty_room = DutyRoom(
+                    duty_id=duty_id,
+                    is_approved=False,
+                    is_sent=False
+                )
+                await my_db.add_instance(add_duty_room)
 
         await asyncio.sleep(24*60*60)  # проверка расписания каждые 24 часа
         # await asyncio.sleep(10)  # проверка расписания каждые 10 секунд
