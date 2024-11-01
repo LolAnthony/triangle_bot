@@ -16,12 +16,22 @@ report_supervisor_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 
-async def create_choose_room_keyboard_for_qr(floor: int) -> InlineKeyboardMarkup:
-    rooms = await my_db.query(Room, floor=floor)
-    buttons = [
-        [InlineKeyboardButton(text=str(room.number), callback_data=f"set_room_qr:{room.id}") for room in rooms[:len(rooms)//3]],
-        [InlineKeyboardButton(text=str(room.number), callback_data=f"set_room_qr:{room.id}") for room in rooms[len(rooms)//3+2 : -2]],
-        [InlineKeyboardButton(text=str(room.number), callback_data=f"set_room_qr:{room.id}") for room in rooms[-3:]],
-    ]
+async def create_choose_room_keyboard_for_qr(floor: int = None) -> InlineKeyboardMarkup:
+    if floor is None:
+        rooms = await my_db.query(Room)
+    else:
+        rooms = await my_db.query(Room, floor=floor)
+    print(rooms)
+    buttons_per_row = 8
+    buttons = []
+
+    # Формируем кнопки с разбивкой на ряды
+    for i in range(0, len(rooms), buttons_per_row):
+        row_buttons = [
+            InlineKeyboardButton(text=str(room.number), callback_data=f"set_room_qr:{room.id}")
+            for room in rooms[i:i + buttons_per_row]
+        ]
+        buttons.append(row_buttons)
+
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
