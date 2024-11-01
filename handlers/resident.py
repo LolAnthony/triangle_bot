@@ -18,9 +18,11 @@ class FormStates(StatesGroup):
 @router.message(F.text == "Отправить результат уборки")
 async def wait_duty_photos(message: Message, state: FSMContext):
     floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
+    print(floor)
     current_duty_room_id = await my_db.get_current_duty_room_id(floor)
+    print("current_duty_room",current_duty_room_id)
 
-    duty_room = await my_db.query_one(DutyRoom, duty_id=current_duty_room_id)
+    duty_room = await my_db.query_one(DutyRoom, id=current_duty_room_id)
 
     if duty_room.is_sent:
         await message.answer("Результат по вашей уборке уже был отправлен")
