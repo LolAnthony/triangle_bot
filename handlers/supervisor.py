@@ -11,6 +11,7 @@ from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomU
 from datetime import datetime
 
 from keyboards.supervisor_keyboard import create_choose_room_keyboard_for_qr
+from keyboards.admin_keyboard import choose_floor_keyboard
 
 router = Router()
 
@@ -133,11 +134,10 @@ async def upload_schedule(message: Message, state: FSMContext):
         await message.answer("Выберите комнату",
                              reply_markup=await create_choose_room_keyboard_for_qr(floor_number))
 
-    #TODO убрать нахер это
     if user_role == 'admin':
-        floor_number = 2
         await message.answer("Выберите комнату",
-                             reply_markup=await create_choose_room_keyboard_for_qr(floor_number))
+                             reply_markup=await create_choose_room_keyboard_for_qr())
+
 
 @router.callback_query(lambda c: c.data.startswith("set_room_qr:"))
 async def set_room(callback_query: CallbackQuery):
@@ -148,4 +148,3 @@ async def set_room(callback_query: CallbackQuery):
     qr = await my_db.get_qrcode_for_room(room_id)
     qr_image = BufferedInputFile(qr.read(), filename="qr_code.png")
     await callback_query.message.bot.send_photo(chat_id=callback_query.message.chat.id, photo=qr_image)
-
