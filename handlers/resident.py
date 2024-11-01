@@ -65,11 +65,10 @@ async def handle_photos(message: Message, state: FSMContext):
 
         tgid = message.from_user.id
         user_room = await my_db.query_one(RoomUser, user_id=tgid)
-        for i in schedule:
-            if i['room_number'] == user_room:
-                users_for_notify = i['users']
-        for user_id in users_for_notify:
-            await message.bot.send_message(chat_id=user_id, text="Отчет об уборке отправлен")
+        if tgid in schedule['users']:
+            users = my_db.get_users_in_room(user_room.room_id)
+            for user in users:
+                await message.bot.send_message(chat_id=user.tgid, text="Отчет об уборке отправлен")
 
         await state.clear()  # Очищаем состояние после завершения
     else:
