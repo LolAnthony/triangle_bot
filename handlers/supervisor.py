@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import tempfile
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
-from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty
+from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty, DutyRoom
 from datetime import datetime
 
 from keyboards.supervisor_keyboard import create_choose_room_keyboard_for_qr
@@ -106,8 +106,16 @@ async def upload_schedule(message: Message, state: FSMContext):
 @router.callback_query(F.data == "confirm")
 async def on_confirm(callback_query: CallbackQuery):
     floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
-    duty_id = await my_db.get_current_duty_room_id(floor)
-    await my_db.change_report_approved_status(duty_id)
+    duty_room_id = await my_db.get_current_duty_room_id(floor)
+
+    duty_room = await my_db.query_one(DutyRoom, id=duty_room_id)
+    duty = await my_db.query_one(Duty, id=duty_room.duty_id)
+
+    room_users = await my_db.query(RoomUser, room_id=duty.room_id)
+    for room_user in room_users:
+        await callback_query.bot.send_message(chat_id=room_user.user_id, text="Результат был подтвержден")
+
+    await my_db.change_report_approved_status(duty_room_id)
     await callback_query.answer("Результат подтвержден.")
     await callback_query.message.edit_text("Результат уборки был подтвержден.")
 
@@ -118,10 +126,16 @@ async def on_reject(callback_query: CallbackQuery):
     floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
     duty_room_id = await my_db.get_current_duty_room_id(floor)
     await my_db.change_report_sent_status(duty_room_id)
-    users = await my_db.get_schedule_for_date(datetime.now().date())
-    users = users['users']
-    for i in users:
-        await callback_query.bot.send_message(i, "Результат уборки был отклонен.")
+    schedule = await my_db.get_schedule_for_date(datetime.now().date())
+
+    floor_duties = await my_db.get_floor_duties(floor)
+
+    duty_room = await my_db.query_one(DutyRoom, id=duty_room_id)
+    duty = await my_db.query_one(Duty, id=duty_room.duty_id)
+
+    room_users = await my_db.query(RoomUser, room_id=duty.room_id)
+    for room_user in room_users:
+        await callback_query.bot.send_message(chat_id=room_user.user_id, text="Результат уборки был отклонен.")
 
     await callback_query.answer("Результат отклонен.")
     await callback_query.message.edit_text("Результат уборки был отклонен.")
