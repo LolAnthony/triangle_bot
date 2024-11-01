@@ -5,6 +5,7 @@ main_supervisor_buttons = [
     [KeyboardButton(text="Добавить комнату")],
     [KeyboardButton(text="Загрузить расписание")],
     [KeyboardButton(text="Получить текущее расписание")],
+    [KeyboardButton(text="Отправить результат уборки")],
 ]
 
 main_supervisor_keyboard = ReplyKeyboardMarkup(keyboard=main_supervisor_buttons, resize_keyboard=True)

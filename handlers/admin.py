@@ -5,7 +5,7 @@ from aiogram.fsm.state import StatesGroup, State
 import re
 from database.database import my_db, get_user_by_id
 from keyboards.admin_keyboard import choose_floor_keyboard, create_choose_room_keyboard, create_choose_resident_keyboard
-
+from keyboards.supervisor_keyboard import main_supervisor_keyboard
 router = Router()
 
 
@@ -29,6 +29,8 @@ async def set_room(callback_query: CallbackQuery):
 @router.callback_query(lambda c: c.data.startswith("set_user:"))
 async def set_room(callback_query: CallbackQuery):
     user_id = int(callback_query.data.split(":")[1])
-    await my_db.set_user_role(user_id, 2)
+    user = await my_db.set_user_role(user_id, 2)
+    print(user.tgid)
+    await callback_query.bot.send_message(user.tgid, "Ты теперь староста", reply_markup=main_supervisor_keyboard)
     await callback_query.answer("+1 в рядах комсомолов")
     await callback_query.message.answer("Староста добавлен")
