@@ -103,7 +103,8 @@ async def upload_schedule(message: Message, state: FSMContext):
 # Обработчик для нажатия кнопки "Подтвердить"
 @router.callback_query(F.data == "confirm")
 async def on_confirm(callback_query: CallbackQuery):
-    duty_id = await my_db.get_current_duty_room_id()
+    floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
+    duty_id = await my_db.get_current_duty_room_id(floor)
     await my_db.change_report_approved_status(duty_id)
     await callback_query.answer("Результат подтвержден.")
     await callback_query.message.edit_text("Результат уборки был подтвержден.")
@@ -112,7 +113,8 @@ async def on_confirm(callback_query: CallbackQuery):
 # Обработчик для нажатия кнопки "Отклонить"
 @router.callback_query(F.data == "reject")
 async def on_reject(callback_query: CallbackQuery):
-    duty_room_id = await my_db.get_current_duty_room_id()
+    floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
+    duty_room_id = await my_db.get_current_duty_room_id(floor)
     await my_db.change_report_sent_status(duty_room_id)
     users = await my_db.get_schedule_for_date(datetime.now().date())
     users = users['users']

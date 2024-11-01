@@ -163,27 +163,36 @@ class Database:
 
     async def get_schedule_for_date(self, date: datetime.date):
         try:
-            duty = await self.query_one(Duty, date=date)
-            room_id = duty.room_id
-            room_number = await self.get_room_number_by_id(room_id=room_id)
-            users = await self.query(RoomUser, room_id=room_id)
+            duties = await self.query(Duty, date=date)
+            room_ids = [duty.room_id for duty in duties]
+            room_number = [
+                await self.get_room_number_by_id(room_id=room_id)
+                for room_id in room_ids
+            ]
+            users = [
+                await self.query(RoomUser, room_id=room_id)
+                for room_id in room_ids
+            ]
 
             return {
-                "duty_id": duty.id,
-                "room_number": room_number,
+                "duty_id": [duty.id for duty in duties] if len(duties) > 0 else [],
+                "room_number": [room.number for room in room_number] if len(room_number) > 0 else [],
                 "users": [user.user_id for user in users] if len(users) > 0 else [],
                 "date": date,
             }
         except AttributeError:
             print("Нет расписания")
 
-    async def get_current_duty_room_id(self):
-        # TODO сделать получение текущей уборки по нужному этажу
+    async def get_current_duty_room_id(self, floor:int = -1):
         now = datetime.now()
-        schedule = await my_db.get_schedule_for_date(now.date())
-        duty_room = await my_db.query_one(DutyRoom, duty_id=schedule['duty_id'])
-
-        return duty_room.id
+        async for session in self.get_session():
+            duty_room_request = await session.execute(
+                select(Room)
+                .join(Duty, Duty.room_id == Room.id)
+                .filter(Room.floor == floor, Duty.date == now)
+            )
+            duty_room = duty_room_request.scalars().first()
+            return duty_room.id
 
     async def change_report_sent_status(self, duty_room_id):
         async for session in self.get_session():
