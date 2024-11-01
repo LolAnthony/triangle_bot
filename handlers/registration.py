@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
-
+from keyboards.resident_keyboard import main_resident_keyboard
 from database.database import User, RoomUser, my_db
 
 router = Router()
@@ -53,7 +53,7 @@ async def message(message: Message, state: FSMContext):
     if room_id != -1:
         await my_db.add_instance(add_user)
         await my_db.add_instance(add_room_user)
-        await message.answer("Вы успешно зарегистрировались!")
+        await message.answer("Вы успешно зарегистрировались!", reply_markup=main_resident_keyboard)
     else:
         await message.answer("Не удалось привязать к комнате!")
     await state.clear()
