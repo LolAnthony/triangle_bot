@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.supervisor_keyboard import report_supervisor_keyboard
 from datetime import datetime
-from database.database import my_db, DutyRoom
+from database.database import my_db, DutyRoom, RoomUser
 
 router = Router()
 storage = MemoryStorage()
@@ -61,8 +61,13 @@ async def handle_photos(message: Message, state: FSMContext):
 
         schedule = await my_db.get_schedule_for_date(datetime.now().date())
 
-        for user_tgid in schedule['users']:
-            await message.bot.send_message(chat_id=user_tgid, text="Отчет об уборке отправлен")
+        tgid = message.from_user.id
+        user_room = await my_db.query_one(RoomUser, user_id=tgid)
+        for i in schedule:
+            if i['room_number'] == user_room:
+                users_for_notify = i['users']
+        for user_id in users_for_notify:
+            await message.bot.send_message(chat_id=user_id, text="Отчет об уборке отправлен")
 
         await state.clear()  # Очищаем состояние после завершения
     else:

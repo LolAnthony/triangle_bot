@@ -187,8 +187,9 @@ class Database:
         now = datetime.now()
         async for session in self.get_session():
             duty_room_request = await session.execute(
-                select(Room)
-                .join(Duty, Duty.room_id == Room.id)
+                select(DutyRoom)
+                .join(Duty, DutyRoom.duty_id == Duty.id)
+                .join(Room, Room.id == Duty.room_id)
                 .filter(Room.floor == floor, Duty.date == now)
             )
             duty_room = duty_room_request.scalars().first()
