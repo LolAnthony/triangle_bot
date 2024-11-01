@@ -233,6 +233,19 @@ class Database:
         room = await self.query_one(Room, id=room_id)
         return room.floor
 
+    async def get_floor_duties(self, floor: int):
+        async for session in self.get_session():
+            try:
+                result = await session.execute(
+                    select(Duty)
+                    .join(Room, Room.id == Duty.room_id)
+                    .where(Room.floor == floor)
+                )
+                return result.scalars().all()
+            except SQLAlchemyError as e:
+                print(f"Error querying data: {e}")
+                return []
+
 
 def get_user_by_id(user_id):
     return User(id=user_id)

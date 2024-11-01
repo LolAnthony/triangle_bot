@@ -91,7 +91,8 @@ async def upload_schedule(message: Message, state: FSMContext):
     # TODO проверка на этаж с которого получаем расписание
     user_role = await my_db.get_user_role(message.from_user.id)
     if user_role == 'supervisor':
-        schedule = await my_db.query(Duty)
+        floor = await my_db.get_floor_by_resident_tgid(message.from_user.tgid)
+        schedule = await my_db.get_floor_duties(floor)
         text = ""
         for duty in schedule:
             formatted_date = duty.date.strftime("%d.%m.%Y")
