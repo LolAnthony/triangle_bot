@@ -271,7 +271,7 @@ class Database:
                 )
 
                 # Добавляем новое дежурство
-                new_duty = Duty(room_id=room_id, date=duty["duty_date"])
+                new_duty = Duty(room_id=room_id, date=datetime.strptime(duty["duty_date"], "%d.%m.%Y").date())
                 session.add(new_duty)
 
             await session.commit()
