@@ -14,7 +14,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, InlineKeyboardMarkup
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.database import Database
 from database.triangle_init import triangle_init
 from keyboards.admin_keyboard import main_admin_keyboard
@@ -64,7 +64,7 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 
 
 async def check_and_send_notifications(bot: Bot):
-    times_for_send = ["03:00", "03:05", "03:10"]
+    times_for_send = ["09:00", "20:00", "22:00"]
 
     while True:
         now = datetime.now()
