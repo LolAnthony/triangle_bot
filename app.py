@@ -122,20 +122,6 @@ async def check_and_send_notifications(bot: Bot):
                             await bot.send_message(chat_id=user.tgid, text=message_text)
                 except IndexError:
                     print("Не все данные")
-        else:
-            if schedule:
-                for user_tgid in schedule['users']:
-                    message_text = "Напоминание‼️\nВаша комната сегодня убирается"
-                    await bot.send_message(chat_id=user_tgid, text=message_text)
-
-                for duty_id in schedule['duties']:
-                    add_duty_room = DutyRoom(
-                        duty_id=duty_id,
-                        is_approved=False,
-                        is_sent=False
-                    )
-                    await my_db.add_instance(add_duty_room)
-            await asyncio.sleep(60)
 
         next_check_time = min(
             (

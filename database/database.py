@@ -186,7 +186,7 @@ class Database:
             print("Нет расписания")
 
     async def get_current_duty_room_id(self, floor: int = -1):
-        now = datetime.now().date()
+        now = (datetime.now() - timedelta(hours=1, seconds=5)).date()
         async for session in self.get_session():
             duty_room_request = await session.execute(
                 select(DutyRoom)
