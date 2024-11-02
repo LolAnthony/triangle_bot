@@ -165,7 +165,7 @@ class Database:
             await session.commit()
             return user
 
-    async def get_schedule_for_date(self, date: datetime.date = datetime.now()-timedelta(hours=1, seconds=5)): # т.к. комната дежурит до 01:00
+    async def get_schedule_for_date(self, date: datetime.date = (datetime.now()-timedelta(hours=1, seconds=5)).date()): # т.к. комната дежурит до 01:00
         try:
             duties = await self.query(Duty, date=date)
             room_ids = [duty.room_id for duty in duties]
