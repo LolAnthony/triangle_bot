@@ -90,18 +90,18 @@ async def check_and_send_notifications(bot: Bot):
         elif current_time_str == "01:00":
             schedule = await my_db.get_schedule_for_date()
             current_duty = schedule['duties']
-            duties_rooms = [
-                await my_db.query(DutyRoom, DutyRoom.duty_id == i) for i in current_duty
+            duties = [
+                await my_db.query(Duty, id=i) for i in current_duty
             ]
-            for duty_room in duties_rooms:
-                duty_id = duty_room.duty_id
-                users = await my_db.get_users_in_room(duty_room.room_id)
-                supervisor = await my_db.get_supervisor_tgid_by_resident_tgid(user[0].tgid)
+            for duty in duties:
+                users = await my_db.get_users_in_room(duty.room_id)
+                supervisor = await my_db.get_supervisor_tgid_by_resident_tgid(users[0].tgid)
                 # TODO функция получить комнату по tgid сделать и использовать здесь и везде!!!
                 supervisor_room_user = await my_db.query(RoomUser.room_id, user_id=supervisor)
                 supervisor_full_name = await my_db.get_full_name(supervisor)
-                supervisor_room = await my_db.query_one(Room, room_id=supervisor_room_user.room_id)
-                if duty_room.is_approved == 0:
+                supervisor_room = await my_db.query_one(Room, room_id=supervisor_room_user)
+                duty_room = await my_db.query_one(DutyRoom, duty_id=duty.id)
+                if duty.is_approved == 0:
                     for user in users:
                         message_text = "Вы не убрались сегодня" if duty_room.is_sent == 0 else (f"Староста не принял вашу уборку, обратитесь к старосте - {supervisor_full_name}"
                                                                                                 f"в {supervisor_room.number} комнате")
