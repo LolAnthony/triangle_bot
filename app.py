@@ -107,7 +107,7 @@ async def check_and_send_notifications(bot: Bot):
                     print(supervisor_room_user)
                     supervisor_full_name = await my_db.get_full_name(supervisor)
                     print(supervisor_full_name)
-                    supervisor_room = await my_db.query_one(Room, room_id=supervisor_room_user)
+                    supervisor_room = await my_db.query_one(Room, id=supervisor_room_user)
                     print(supervisor_room)
                     duty_room = await my_db.query_one(DutyRoom, duty_id=duty.id)
                     print(duty_room)
