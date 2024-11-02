@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from io import BytesIO
+from pprint import pprint
 
 import qrcode
 from dotenv import load_dotenv
@@ -165,7 +166,10 @@ class Database:
             await session.commit()
             return user
 
-    async def get_schedule_for_date(self, date: datetime.date = (datetime.now()-timedelta(hours=1, seconds=5)).date()): # т.к. комната дежурит до 01:00
+    async def get_schedule_for_date(self, date: datetime.date = None): # т.к. комната дежурит до 01:00
+        if date is None:
+            # Вычисляем текущую дату с учетом смещения на -1 час, если это необходимо
+            date = (datetime.now() - timedelta(hours=1, seconds=5)).date()
         try:
             duties = await self.query(Duty, date=date)
             room_ids = [duty.room_id for duty in duties]
@@ -175,8 +179,6 @@ class Database:
                 room_users = await self.query(RoomUser, room_id=room_id)
                 for room_user in room_users:
                     users.append(room_user)
-            print(room_ids)
-            print(users)
             return {
                 "duties": [duty.id for duty in duties] if len(duties) > 0 else [],
                 "users": [user.user_id for user in users] if len(users) > 0 else [],
