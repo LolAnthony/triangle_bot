@@ -36,9 +36,6 @@ DEV = getenv("DEV") == "TRUE"
 dp = Dispatcher()
 dp.include_routers(admin.router, supervisor.router, resident.router, registration.router)
 
-ADMINS = []
-SUPERVISOR = []
-
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message, command: CommandObject, state: FSMContext) -> None:
@@ -66,7 +63,7 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 
 
 async def check_and_send_notifications(bot: Bot):
-    times_for_send = ["01:00", "01:01", "12:00", "20:00", "22:00"]
+    times_for_send = ["01:00", "12:00", "20:00", "22:00"]
 
     while True:
         now = datetime.now()
@@ -110,9 +107,8 @@ async def check_and_send_notifications(bot: Bot):
                     if duty_room and duty_room.is_approved == 0:
                         await bot.send_message(supervisor, f"Комната {room_number} не убралась")
                         for user in users:
-
                             message_text = (f"Вы не убрались, обратитесь к старосте - {supervisor_full_name}"
-                                                                    f" в {supervisor_room.number} комнате")
+                                            f" в {supervisor_room.number} комнате")
                             await bot.send_message(chat_id=user.tgid, text=message_text)
                     else:
                         for user in users:
