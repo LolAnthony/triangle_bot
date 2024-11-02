@@ -1,8 +1,9 @@
 from os import getenv, remove
 
 from aiogram.fsm.context import FSMContext
+from sqlalchemy.util import await_only
 
-from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, DutyRoom
+from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, DutyRoom, Duty
 
 from dotenv import load_dotenv
 from os import getenv
@@ -14,7 +15,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.types import Message, InlineKeyboardMarkup
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.database import Database
 from database.triangle_init import triangle_init
 from keyboards.admin_keyboard import main_admin_keyboard
@@ -64,14 +65,14 @@ async def command_start_handler(message: Message, command: CommandObject, state:
 
 
 async def check_and_send_notifications(bot: Bot):
-    times_for_send = ["03:00", "03:05", "03:10"]
+    times_for_send = ["01:00", "12:00", "20:00", "22:00"]
 
     while True:
         now = datetime.now()
         current_time_str = now.strftime("%H:%M")
 
-        if current_time_str in times_for_send:
-            schedule = await my_db.get_schedule_for_date(now.date())
+        if current_time_str in times_for_send and current_time_str != "01:00":
+            schedule = await my_db.get_schedule_for_date()
 
             if schedule:
                 for user_tgid in schedule['users']:
@@ -86,7 +87,7 @@ async def check_and_send_notifications(bot: Bot):
                     )
                     await my_db.add_instance(add_duty_room)
             await asyncio.sleep(60)
-        else:
+        elif current_time_str == "01:00":
             next_check_time = min(
                 (
                     datetime.combine(now.date(), datetime.strptime(t, "%H:%M").time())
@@ -95,6 +96,43 @@ async def check_and_send_notifications(bot: Bot):
                 )
                 for t in times_for_send
             )
+        else:
+            schedule = await my_db.get_schedule_for_date()
+            current_duty = schedule['duties']
+            duties_rooms = [
+                await my_db.query(DutyRoom, DutyRoom.duty_id == i) for i in current_duty
+            ]
+            for duty_room in duties_rooms:
+                duty_id = duty_room.duty_id
+                users = await my_db.get_users_in_room(duty_room.room_id)
+                supervisor = await my_db.get_supervisor_tgid_by_resident_tgid(user[0].tgid)
+                # TODO функция получить комнату по tgid сделать и использовать здесь и везде!!!
+                supervisor_room_user = await my_db.query(RoomUser.room_id, user_id=supervisor)
+                supervisor_full_name = await my_db.get_full_name(supervisor)
+                supervisor_room = await my_db.query_one(Room, room_id=supervisor_room_user.room_id)
+                if duty_room.is_approved == 0:
+                    for user in users:
+                        message_text = "Вы не убрались сегодня" if duty_room.is_sent == 0 else (f"Староста не принял вашу уборку, обратитесь к старосте - {supervisor_full_name}"
+                                                                                                f"в {supervisor_room.number} комнате")
+                        await bot.send_message(chat_id=user_tgid, text=message_text)
+                else:
+                    await bot.send_message(chat_id=user_tgid, text=message_text)
+                    for user in users:
+                        message_text = f"Отличная работа! {supervisor_full_name} гордится вами =)"
+                        await bot.send_message(chat_id=user_tgid, text=message_text)
+            if schedule:
+                for user_tgid in schedule['users']:
+                    message_text = "Напоминание‼️\nВаша комната сегодня убирается"
+                    await bot.send_message(chat_id=user_tgid, text=message_text)
+
+                for duty_id in schedule['duties']:
+                    add_duty_room = DutyRoom(
+                        duty_id=duty_id,
+                        is_approved=False,
+                        is_sent=False
+                    )
+                    await my_db.add_instance(add_duty_room)
+            await asyncio.sleep(60)
 
             wait_time = (next_check_time - now).total_seconds()
             await asyncio.sleep(wait_time)

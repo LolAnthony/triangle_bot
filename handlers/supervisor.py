@@ -126,13 +126,8 @@ async def on_reject(callback_query: CallbackQuery):
     floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
     duty_room_id = await my_db.get_current_duty_room_id(floor)
     await my_db.change_report_sent_status(duty_room_id)
-    schedule = await my_db.get_schedule_for_date(datetime.now().date())
-
-    floor_duties = await my_db.get_floor_duties(floor)
-
     duty_room = await my_db.query_one(DutyRoom, id=duty_room_id)
     duty = await my_db.query_one(Duty, id=duty_room.duty_id)
-
     room_users = await my_db.query(RoomUser, room_id=duty.room_id)
     for room_user in room_users:
         await callback_query.bot.send_message(chat_id=room_user.user_id, text="Результат уборки был отклонен.")

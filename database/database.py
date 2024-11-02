@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 
 import qrcode
@@ -127,6 +127,10 @@ class Database:
         room = await self.query_one(Room, number=room_number)
         return room.id
 
+    async def get_full_name(self, tgid: int):
+        full_name = await self.query_one(User, tgid=tgid)
+        return f"{full_name.name} {full_name.surname}"
+
     async def get_room_number_by_id(self, room_id: int):
         room = await self.query_one(Room, id=room_id)
         return room.number
@@ -161,7 +165,7 @@ class Database:
             await session.commit()
             return user
 
-    async def get_schedule_for_date(self, date: datetime.date):
+    async def get_schedule_for_date(self, date: datetime.date = datetime.now()-timedelta(hours=1, seconds=5)): # т.к. комната дежурит до 01:00
         try:
             duties = await self.query(Duty, date=date)
             room_ids = [duty.room_id for duty in duties]

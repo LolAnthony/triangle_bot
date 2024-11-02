@@ -61,7 +61,7 @@ async def handle_photos(message: Message, state: FSMContext):
 
         await my_db.change_report_sent_status(current_duty_room_id)
 
-        schedule = await my_db.get_schedule_for_date(datetime.now().date())
+        schedule = await my_db.get_schedule_for_date()
 
         tgid = message.from_user.id
         user_room = await my_db.query_one(RoomUser, user_id=tgid)
