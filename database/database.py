@@ -265,14 +265,28 @@ class Database:
             for duty in schedule_data:
                 room_id = await my_db.get_room_id_by_number(duty["room_number"])
 
+                old_duty = await self.query_one(Duty, room_id=room_id)
                 # Удаляем старое дежурство для той же комнаты и даты
                 await session.execute(
                     delete(Duty).where(Duty.room_id == room_id)
                 )
 
+                if old_duty:
+                    # Удаляем старое duty_id
+                    await session.execute(
+                        delete(DutyRoom).where(DutyRoom.duty_id == old_duty.id)
+                    )
+
+
                 # Добавляем новое дежурство
                 new_duty = Duty(room_id=room_id, date=duty["duty_date"])
                 session.add(new_duty)
+                await session.flush()
+
+                print(new_duty.id)
+                # Добавляем новый duty_room
+                new_duty_room = DutyRoom(duty_id=new_duty.id, is_approved=False, is_sent=False)
+                session.add(new_duty_room)
 
             await session.commit()
 

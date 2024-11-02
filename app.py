@@ -77,13 +77,13 @@ async def check_and_send_notifications(bot: Bot):
                     message_text = "Напоминание‼️\nВаша комната сегодня убирается"
                     await bot.send_message(chat_id=user_tgid, text=message_text)
 
-                for duty_id in schedule['duties']:
-                    add_duty_room = DutyRoom(
-                        duty_id=duty_id,
-                        is_approved=False,
-                        is_sent=False
-                    )
-                    await my_db.add_instance(add_duty_room)
+                # for duty_id in schedule['duties']:
+                #     add_duty_room = DutyRoom(
+                #         duty_id=duty_id,
+                #         is_approved=False,
+                #         is_sent=False
+                #     )
+                #     await my_db.add_instance(add_duty_room)
             await asyncio.sleep(60)
         elif current_time_str == "01:00":
             schedule = await my_db.get_schedule_for_date()
