@@ -4,7 +4,7 @@ from io import BytesIO
 import qrcode
 from dotenv import load_dotenv
 from magic_filter import AttrDict
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
+from sqlalchemy import create_engine, delete, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
@@ -185,7 +185,7 @@ class Database:
         except AttributeError:
             print("Нет расписания")
 
-    async def get_current_duty_room_id(self, floor:int = -1):
+    async def get_current_duty_room_id(self, floor: int = -1):
         now = datetime.now().date()
         async for session in self.get_session():
             duty_room_request = await session.execute(
@@ -257,6 +257,22 @@ class Database:
             except SQLAlchemyError as e:
                 print(f"Error querying data: {e}")
                 return []
+
+    async def update_duties(self, schedule_data):
+        async for session in my_db.get_session():
+            for duty in schedule_data:
+                room_id = await my_db.get_room_id_by_number(duty["room_number"])
+
+                # Удаляем старое дежурство для той же комнаты и даты
+                await session.execute(
+                    delete(Duty).where(Duty.room_id == room_id)
+                )
+
+                # Добавляем новое дежурство
+                new_duty = Duty(room_id=room_id, date=duty["duty_date"])
+                session.add(new_duty)
+
+            await session.commit()
 
 
 def get_user_by_id(user_id):

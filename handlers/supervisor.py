@@ -8,10 +8,8 @@ import os
 import tempfile
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty, DutyRoom
-from datetime import datetime
-
+from datetime import datetime, timedelta
 from keyboards.supervisor_keyboard import create_choose_room_keyboard_for_qr
-from keyboards.admin_keyboard import choose_floor_keyboard
 
 router = Router()
 
@@ -24,10 +22,30 @@ class ScheduleUploadStates(StatesGroup):
 async def upload_schedule(message: Message, state: FSMContext):
     user_role = await my_db.get_user_role(message.from_user.id)
     if user_role == 'supervisor':
+        # Получаем номер этажа пользователя
+        floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
+
+        # Получаем комнаты на этом этаже
+        rooms = await my_db.query(Room, floor=floor)
+
+        # Текущая дата в формате дд.мм.гггг
+        start_date = datetime.now()
+
+        # Формируем данные для таблицы
+        data = {
+            "Ком. №": [room.number for room in rooms],
+            "Дата": [(start_date + timedelta(days=i)).strftime("%d.%m.%Y") for i in range(len(rooms))]
+        }
+
+        # Создаем DataFrame и временный Excel файл
+        df = pd.DataFrame(data)
+        file_path = "schedule_sample.xlsx"
+        df.to_excel(file_path, index=False)
+
+        # Отправляем созданный файл пользователю
         await message.answer(
-            "Пришлите расписание в виде Excel таблицы, формат таблицы должен быть такой, как в прикрепленном файле:",
+            "Пришлите расписание в виде Excel таблицы, формат таблицы должен быть такой, как в прикрепленном файле:"
         )
-        file_path = "handlers/schedule_sample.xlsx"
         await message.answer_document(FSInputFile(file_path))
 
         # Переход в состояние ожидания файла
@@ -58,18 +76,8 @@ async def handle_schedule_file(message: Message, state: FSMContext):
             duty_date = row[1]
             schedule_data.append({"room_number": room_number, "duty_date": duty_date})
 
-        add_duties = [
-            Duty(
-                room_id=await my_db.get_room_id_by_number(duty["room_number"]),
-                date=duty["duty_date"],
-            ) for duty in schedule_data
-        ]
-
-        for duty in add_duties:
-            await my_db.add_instance(duty)
-
-        # Ответ с подтверждением
-        await message.answer(f"Расписание успешно загружено и обработано.")
+        await my_db.update_duties(schedule_data)
+        await message.answer("Расписание успешно загружено и обработано.")
 
     except Exception as e:
         print(e)
@@ -88,7 +96,6 @@ async def handle_schedule_file(message: Message, state: FSMContext):
 
 @router.message(F.text == "Получить текущее расписание")
 async def upload_schedule(message: Message, state: FSMContext):
-    # TODO проверка на этаж с которого получаем расписание
     user_role = await my_db.get_user_role(message.from_user.id)
     if user_role == 'supervisor':
         floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
