@@ -88,15 +88,6 @@ async def check_and_send_notifications(bot: Bot):
                     await my_db.add_instance(add_duty_room)
             await asyncio.sleep(60)
         elif current_time_str == "01:00":
-            next_check_time = min(
-                (
-                    datetime.combine(now.date(), datetime.strptime(t, "%H:%M").time())
-                    if datetime.strptime(t, "%H:%M").time() > now.time()
-                    else datetime.combine(now.date() + timedelta(days=1), datetime.strptime(t, "%H:%M").time())
-                )
-                for t in times_for_send
-            )
-        else:
             schedule = await my_db.get_schedule_for_date()
             current_duty = schedule['duties']
             duties_rooms = [
@@ -114,12 +105,11 @@ async def check_and_send_notifications(bot: Bot):
                     for user in users:
                         message_text = "Вы не убрались сегодня" if duty_room.is_sent == 0 else (f"Староста не принял вашу уборку, обратитесь к старосте - {supervisor_full_name}"
                                                                                                 f"в {supervisor_room.number} комнате")
-                        await bot.send_message(chat_id=user_tgid, text=message_text)
+                        await bot.send_message(chat_id=user.tgid, text=message_text)
                 else:
-                    await bot.send_message(chat_id=user_tgid, text=message_text)
                     for user in users:
                         message_text = f"Отличная работа! {supervisor_full_name} гордится вами =)"
-                        await bot.send_message(chat_id=user_tgid, text=message_text)
+                        await bot.send_message(chat_id=user.tgid, text=message_text)
             if schedule:
                 for user_tgid in schedule['users']:
                     message_text = "Напоминание‼️\nВаша комната сегодня убирается"
@@ -134,8 +124,16 @@ async def check_and_send_notifications(bot: Bot):
                     await my_db.add_instance(add_duty_room)
             await asyncio.sleep(60)
 
-            wait_time = (next_check_time - now).total_seconds()
-            await asyncio.sleep(wait_time)
+        next_check_time = min(
+            (
+                datetime.combine(now.date(), datetime.strptime(t, "%H:%M").time())
+                if datetime.strptime(t, "%H:%M").time() > now.time()
+                else datetime.combine(now.date() + timedelta(days=1), datetime.strptime(t, "%H:%M").time())
+            )
+            for t in times_for_send
+        )
+        wait_time = (next_check_time - now).total_seconds()
+        await asyncio.sleep(wait_time)
 
 
 async def main() -> None:
