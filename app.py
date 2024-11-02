@@ -138,16 +138,9 @@ async def check_and_send_notifications(bot: Bot):
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     asyncio.create_task(check_and_send_notifications(bot))
-    # try:
-    #     remove('database.db')
-    # except FileNotFoundError:
-    #     print("Не существует")
-    #
-    # if DEV:
-    #     if not await my_db.is_exist():
-    #         await my_db.initialize()
-    # if not await my_db.query_one(User, id="0"):
-    #     await triangle_init(my_db)
+    if not await my_db.is_exist():
+        await my_db.initialize()
+        await triangle_init(my_db)
     await dp.start_polling(bot)
 
 
