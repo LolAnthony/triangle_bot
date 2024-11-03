@@ -4,8 +4,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from keyboards.supervisor_keyboard import report_supervisor_keyboard
-from datetime import datetime
-from database.database import my_db, DutyRoom, RoomUser
+from datetime import datetime, timedelta
+from database.database import my_db, DutyRoom, RoomUser, Duty
 
 router = Router()
 storage = MemoryStorage()
@@ -20,19 +20,26 @@ async def wait_duty_photos(message: Message, state: FSMContext):
     floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
     print(floor)
     current_duty_room_id = await my_db.get_current_duty_room_id(floor)
-    print("current_duty_room",current_duty_room_id)
+    print("current_duty_room", current_duty_room_id)
 
     duty_room = await my_db.query_one(DutyRoom, id=current_duty_room_id)
 
-    if duty_room.is_sent:
-        await message.answer("Результат по вашей уборке уже был отправлен")
+    schedule = await my_db.get_schedule_for_date()
+    current_users = schedule['users']
+
+    if message.from_user.id in current_users:
+
+        if duty_room.is_sent:
+            await message.answer("Результат по вашей уборке уже был отправлен")
+        else:
+            await state.set_state(FormStates.waiting_for_photos)
+            await message.answer("Отправьте 4 фотографии:\n"
+                                 "1. Фото убранных плит\n"
+                                 "2. Фото убранных раковин\n"
+                                 "3. Фото стола с микроволновкой\n"
+                                 "4. Общий план убранной кухни со стороны входа")
     else:
-        await state.set_state(FormStates.waiting_for_photos)
-        await message.answer("Отправьте 4 фотографии:\n"
-                             "1. Фото убранных плит\n"
-                             "2. Фото убранных раковин\n"
-                             "3. Фото стола с микроволновкой\n"
-                             "4. Общий план убранной кухни со стороны входа")
+        await message.answer("Вы сегодня не убираетесь")
 
 
 @router.message(FormStates.waiting_for_photos, F.content_type == ContentType.PHOTO)
