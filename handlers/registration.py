@@ -23,14 +23,18 @@ async def message(message: Message, state: FSMContext):
     if room_id == -1:
         await message.answer("Не удалось привязать к комнате!")
     else:
-        await message.answer("Введите **Имя** (пример: **Иван**)")
+        await message.answer(
+            text="Введите **Имя** (пример: **Иван**)", parse_mode="Markdown"
+        )
         await state.set_state(FormStates.waiting_for_name)
 
 
 @router.message(F.text, FormStates.waiting_for_name)
 async def message(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
-    await message.answer("Введите **Фамилию** (пример: **Иванов**)")
+    await message.answer(
+        text="Введите **Фамилию** (пример: **Иванов**)", parse_mode="Markdown"
+    )
     await state.set_state(FormStates.waiting_for_surname)
 
 
