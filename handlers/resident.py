@@ -1,3 +1,5 @@
+import time
+
 from aiogram import Router, F
 from aiogram.types import Message, ContentType, InputMediaPhoto, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -47,7 +49,7 @@ async def handle_photos(message: Message, state: FSMContext):
     user_data = await state.get_data()
     photos = user_data.get("photos", [])
 
-    photos.append(message.photo[-1].file_id)  # Сохраняем фото
+    photos.append(message.photo[-1].file_id)
 
     # Сохраняем обновленный список фотографий в состояние
     await state.update_data(photos=photos)
@@ -78,5 +80,4 @@ async def handle_photos(message: Message, state: FSMContext):
                 await message.bot.send_message(chat_id=user.tgid, text="Отчет об уборке отправлен")
 
         await state.clear()  # Очищаем состояние после завершения
-    else:
-        await message.answer(f"Вы отправили {len(photos)} из 4 фотографий. Продолжайте отправлять.")
+   
