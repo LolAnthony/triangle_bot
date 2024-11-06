@@ -68,13 +68,16 @@ async def handle_schedule_file(message: Message, state: FSMContext):
     # Парсинг Excel-файла
     try:
         df = pd.read_excel(temp_file_path)
-
         # первый столбец — "номер комнаты", второй столбец — "дата дежурства"
         schedule_data = []
         for index, row in df.iterrows():
             room_number = row[0]
             duty_date = row[1]
-            schedule_data.append({"room_number": room_number, "duty_date": duty_date})
+
+            if not isinstance(duty_date, pd.Timestamp):
+                duty_date = pd.to_datetime(duty_date)
+
+            schedule_data.append({"room_number": int(room_number), "duty_date": duty_date})
 
         await my_db.update_duties(schedule_data)
         await message.answer("Расписание успешно загружено и обработано.")

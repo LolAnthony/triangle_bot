@@ -266,10 +266,13 @@ class Database:
                 room_id = await my_db.get_room_id_by_number(duty["room_number"])
 
                 old_duty = await self.query_one(Duty, room_id=room_id)
-                # Удаляем старое дежурство для той же комнаты и даты
-                await session.execute(
-                    delete(Duty).where(Duty.room_id == room_id)
-                )
+                try:
+                    # Удаляем старое дежурство для той же комнаты
+                    await session.execute(
+                        delete(Duty).where(Duty.room_id == room_id)
+                    )
+                except SQLAlchemyError as e:
+                    print(f"Error querying data: {e}")
 
                 if old_duty:
                     # Удаляем старое duty_id
@@ -277,9 +280,11 @@ class Database:
                         delete(DutyRoom).where(DutyRoom.duty_id == old_duty.id)
                     )
 
+                duty_date = duty["duty_date"].date()
 
+                print(duty_date, type(duty_date))
                 # Добавляем новое дежурство
-                new_duty = Duty(room_id=room_id, date=datetime.strptime(duty["duty_date"], "%d.%m.%Y").date())
+                new_duty = Duty(room_id=room_id, date=duty_date)
                 session.add(new_duty)
                 await session.flush()
 
