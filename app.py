@@ -4,7 +4,7 @@ from pprint import pprint
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.util import await_only
 
-from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, DutyRoom, Duty
+from database.database import RoomInit, User, my_db, Room, RoomUser, DutyRoom, Duty
 
 from dotenv import load_dotenv
 from os import getenv
@@ -48,8 +48,8 @@ async def command_start_handler(message: Message, command: CommandObject, state:
             await state.update_data(room_id=room.id)
             await message.answer(f"Привет, {html.bold(message.from_user.full_name)}!",
                                  reply_markup=main_unregistered_user_keyboard)
-    elif not get_user_by_id(message.from_user.id):
-        await message.answer(f"Неверный ключ комнаты")
+    # elif not get_user_by_id(message.from_user.id):
+    #     await message.answer(f"Неверный ключ комнаты")
     user_role = await my_db.get_user_role(message.from_user.id)
     if user_role == 'admin':
         await message.answer(f"Доброго времени суток Админ, {html.bold(message.from_user.full_name)}!",

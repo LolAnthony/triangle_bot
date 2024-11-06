@@ -3,6 +3,7 @@ from io import BytesIO
 from pprint import pprint
 
 import qrcode
+from PIL import ImageDraw, ImageFont
 from dotenv import load_dotenv
 from magic_filter import AttrDict
 from sqlalchemy import create_engine, delete, Column, Integer, String, Boolean, ForeignKey, Date, inspect, select
@@ -166,7 +167,7 @@ class Database:
             await session.commit()
             return user
 
-    async def get_schedule_for_date(self, date: datetime.date = None): # т.к. комната дежурит до 01:00
+    async def get_schedule_for_date(self, date: datetime.date = None):  # т.к. комната дежурит до 01:00
         if date is None:
             # Вычисляем текущую дату с учетом смещения на -1 час, если это необходимо
             date = (datetime.now() - timedelta(hours=1, seconds=5)).date()
@@ -231,13 +232,46 @@ class Database:
             supervisors_id = [i.tgid for i in supervisors] if len(supervisors) > 1 else supervisors[0].tgid
             return supervisors_id
 
-    async def get_qrcode_for_room(self, room_id):
+    async def get_qrcode_for_room(self, room_id, room_number):
         room_init = await self.query_one(RoomInit, room_id=room_id)
         room_key = room_init.key
-        url_key = f"https://t.me/mospolytech_residence_bot?start={room_key}"
+        url_key = f"https://t.me/triangle_test_bot?start={room_key}"
+        print(url_key)
         qr = qrcode.make(url_key)
+        qr_img = qr.convert('RGB')
+        draw = ImageDraw.Draw(qr_img)
+        text = str(room_number)
+        font = ImageFont.load_default(55)
+
+        # Получаем размеры текста с использованием textbbox
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+        # Получаем размеры QR-кода
+        qr_width, qr_height = qr_img.size
+
+        # Вычисляем размер квадрата в центре
+        square_size = 120  # Размер квадрата
+        square_x_pos = (qr_width - square_size) // 2
+        square_y_pos = (qr_height - square_size) // 2
+
+        # Рисуем квадрат в центре
+        draw.rectangle(
+            [square_x_pos, square_y_pos, square_x_pos + square_size, square_y_pos + square_size],
+            fill="white",
+            outline="black",  # Черная обводка
+            width=10  # Толщина обводки (если нужно увеличить)
+        )
+
+        # Рассчитываем позицию для размещения текста по центру
+        text_x_pos = (qr_width - text_width) // 2
+        text_y_pos = (qr_height - text_height) // 2 - 10
+
+        # Добавляем текст на изображение
+        draw.text((text_x_pos, text_y_pos), text, font=font, fill='black')
+
         img_buffer = BytesIO()
-        qr.save(img_buffer, format="PNG")
+        qr_img.save(img_buffer, format="PNG")
         img_buffer.seek(0)
         return img_buffer
 
@@ -296,8 +330,6 @@ class Database:
             await session.commit()
 
 
-def get_user_by_id(user_id):
-    return User(id=user_id)
 
 
 CONNECTION_STRING = getenv("CONNECTION_STRING")

@@ -7,7 +7,7 @@ import pandas as pd
 import os
 import tempfile
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
-from database.database import get_user_by_id, RoomInit, User, my_db, Room, RoomUser, Duty, DutyRoom
+from database.database import RoomInit, User, my_db, Room, RoomUser, Duty, DutyRoom
 from datetime import datetime, timedelta
 from keyboards.supervisor_keyboard import create_choose_room_keyboard_for_qr
 
@@ -164,7 +164,13 @@ async def set_room(callback_query: CallbackQuery):
     room_id = int(callback_query.data.split(":")[1])
     await callback_query.answer("Комната выбрана")
     room_number = await my_db.get_room_number_by_id(room_id)
-    await callback_query.message.answer(f"QR код для добавления участников комнаты {room_number}:")
-    qr = await my_db.get_qrcode_for_room(room_id)
+    room_users = await my_db.get_users_in_room(room_id)
+
+    roommates_string = "\n".join(f"{i + 1}. {room_users[i].name} {room_users[i].surname}" for i in range(len(room_users)))
+
+    # await callback_query.message.answer(f"QR код для комнаты {room_number}")
+    qr = await my_db.get_qrcode_for_room(room_id, room_number)
     qr_image = BufferedInputFile(qr.read(), filename="qr_code.png")
     await callback_query.message.bot.send_photo(chat_id=callback_query.message.chat.id, photo=qr_image)
+    await callback_query.message.answer("Зарегистрированные жильцы:\n" + roommates_string)
+

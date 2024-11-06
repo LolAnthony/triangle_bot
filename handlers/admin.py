@@ -3,7 +3,7 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 import re
-from database.database import my_db, get_user_by_id
+from database.database import my_db
 from keyboards.admin_keyboard import choose_floor_keyboard, create_choose_room_keyboard, create_choose_resident_keyboard
 from keyboards.supervisor_keyboard import main_supervisor_keyboard
 router = Router()
