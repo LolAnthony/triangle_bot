@@ -235,7 +235,7 @@ class Database:
     async def get_qrcode_for_room(self, room_id, room_number):
         room_init = await self.query_one(RoomInit, room_id=room_id)
         room_key = room_init.key
-        url_key = f"https://t.me/triangle_test_bot?start={room_key}"
+        url_key = f"https://t.me/mospolytech_residence_bot?start={room_key}"
         print(url_key)
         qr = qrcode.make(url_key)
         qr_img = qr.convert('RGB')
