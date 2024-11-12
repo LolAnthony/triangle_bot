@@ -1,6 +1,7 @@
 from os import getenv, remove
 from pprint import pprint
 
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.util import await_only
 
@@ -130,7 +131,11 @@ async def check_and_send_notifications(bot: Bot):
 
 
 async def main() -> None:
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    if DEV:
+        bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    else:
+        bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+                  session=AiohttpSession(proxy='http://proxy.server:3128'))
     asyncio.create_task(check_and_send_notifications(bot))
     if not await my_db.is_exist():
         await my_db.initialize()
