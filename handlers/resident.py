@@ -5,7 +5,7 @@ from aiogram.types import Message, ContentType, InputMediaPhoto, InlineKeyboardB
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
-from keyboards.supervisor_keyboard import report_supervisor_keyboard
+from keyboards.supervisor_keyboard import create_report_keyboard
 from datetime import datetime, timedelta
 from database.database import my_db, DutyRoom, RoomUser, Duty
 
@@ -63,10 +63,16 @@ async def handle_photos(message: Message, state: FSMContext):
         supervisor_id = await my_db.get_supervisor_tgid_by_resident_tgid(message.from_user.id)
 
         await message.bot.send_media_group(chat_id=supervisor_id, media=media_group, )
-        await message.bot.send_message(chat_id=supervisor_id, text="Результат уборки",
-                                       reply_markup=report_supervisor_keyboard)
+
         floor = await my_db.get_floor_by_resident_tgid(message.from_user.id)
         current_duty_room_id = await my_db.get_current_duty_room_id(floor)
+
+        confirm_reject_keyboard = await create_report_keyboard(current_duty_room_id)
+        await message.bot.send_message(
+            chat_id=supervisor_id,
+            text="Результат уборки",
+            reply_markup=confirm_reject_keyboard
+        )
 
         await my_db.change_report_sent_status(current_duty_room_id)
 
@@ -80,4 +86,3 @@ async def handle_photos(message: Message, state: FSMContext):
                 await message.bot.send_message(chat_id=user.tgid, text="Отчет об уборке отправлен")
 
         await state.clear()  # Очищаем состояние после завершения
-   

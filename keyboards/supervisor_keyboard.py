@@ -10,11 +10,23 @@ main_supervisor_buttons = [
 
 main_supervisor_keyboard = ReplyKeyboardMarkup(keyboard=main_supervisor_buttons, resize_keyboard=True)
 
+
 # inline клавиатура с подтверждениями/отклонением уборки
-report_supervisor_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Подтвердить", callback_data="confirm")],
-    [InlineKeyboardButton(text="Отклонить", callback_data="reject")]
-])
+async def create_report_keyboard(duty_room_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="Подтвердить",
+                callback_data=f"confirm:{duty_room_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="Отклонить",
+                callback_data=f"reject:{duty_room_id}"
+            )
+        ]
+    ])
 
 
 async def create_choose_room_keyboard_for_qr(floor: int = None) -> InlineKeyboardMarkup:
@@ -35,4 +47,3 @@ async def create_choose_room_keyboard_for_qr(floor: int = None) -> InlineKeyboar
         buttons.append(row_buttons)
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)
-

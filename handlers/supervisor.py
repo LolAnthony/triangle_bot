@@ -113,17 +113,19 @@ async def upload_schedule(message: Message, state: FSMContext):
 
 
 # Обработчик для нажатия кнопки "Подтвердить"
-@router.callback_query(F.data == "confirm")
+@router.callback_query(F.data.startswith("confirm:"))
 async def on_confirm(callback_query: CallbackQuery):
-    floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
-    duty_room_id = await my_db.get_current_duty_room_id(floor)
+    duty_room_id = int(callback_query.data.split(":")[1])
 
     duty_room = await my_db.query_one(DutyRoom, id=duty_room_id)
     duty = await my_db.query_one(Duty, id=duty_room.duty_id)
 
     room_users = await my_db.query(RoomUser, room_id=duty.room_id)
     for room_user in room_users:
-        await callback_query.bot.send_message(chat_id=room_user.user_id, text="Результат был подтвержден")
+        await callback_query.bot.send_message(
+            chat_id=room_user.user_id,
+            text="Результат был подтвержден"
+        )
 
     await my_db.change_report_approved_status(duty_room_id)
     await callback_query.answer("Результат подтвержден.")
@@ -131,16 +133,20 @@ async def on_confirm(callback_query: CallbackQuery):
 
 
 # Обработчик для нажатия кнопки "Отклонить"
-@router.callback_query(F.data == "reject")
+@router.callback_query(F.data.startswith("reject:"))
 async def on_reject(callback_query: CallbackQuery):
-    floor = await my_db.get_floor_by_resident_tgid(callback_query.from_user.id)
-    duty_room_id = await my_db.get_current_duty_room_id(floor)
+    duty_room_id = int(callback_query.data.split(":")[1])
+
     await my_db.change_report_sent_status(duty_room_id)
     duty_room = await my_db.query_one(DutyRoom, id=duty_room_id)
     duty = await my_db.query_one(Duty, id=duty_room.duty_id)
+
     room_users = await my_db.query(RoomUser, room_id=duty.room_id)
     for room_user in room_users:
-        await callback_query.bot.send_message(chat_id=room_user.user_id, text="Результат уборки был отклонен.")
+        await callback_query.bot.send_message(
+            chat_id=room_user.user_id,
+            text="Результат уборки был отклонен."
+        )
 
     await callback_query.answer("Результат отклонен.")
     await callback_query.message.edit_text("Результат уборки был отклонен.")
@@ -166,11 +172,11 @@ async def set_room(callback_query: CallbackQuery):
     room_number = await my_db.get_room_number_by_id(room_id)
     room_users = await my_db.get_users_in_room(room_id)
 
-    roommates_string = "\n".join(f"{i + 1}. {room_users[i].name} {room_users[i].surname}" for i in range(len(room_users)))
+    roommates_string = "\n".join(
+        f"{i + 1}. {room_users[i].name} {room_users[i].surname}" for i in range(len(room_users)))
 
     # await callback_query.message.answer(f"QR код для комнаты {room_number}")
     qr = await my_db.get_qrcode_for_room(room_id, room_number)
     qr_image = BufferedInputFile(qr.read(), filename="qr_code.png")
     await callback_query.message.bot.send_photo(chat_id=callback_query.message.chat.id, photo=qr_image)
     await callback_query.message.answer("Зарегистрированные жильцы:\n" + roommates_string)
-
