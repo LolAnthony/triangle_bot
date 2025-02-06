@@ -26,6 +26,9 @@ from keyboards.resident_keyboard import main_resident_keyboard
 from keyboards.unregistered_user_keyboard import main_unregistered_user_keyboard
 from handlers import admin, supervisor, resident, registration
 from functools import partial
+from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
+from scheduler import scheduler, send_notification, update_duties
 
 load_dotenv()
 
@@ -63,80 +66,20 @@ async def command_start_handler(message: Message, command: CommandObject, state:
                              reply_markup=main_resident_keyboard)
 
 
-async def check_and_send_notifications(bot: Bot):
-    times_for_send = ["01:00", "12:00", "20:00", "22:00"]
-
-    while True:
-        now = datetime.now()
-        current_time_str = now.strftime("%H:%M")
-
-        if current_time_str in times_for_send and current_time_str != "01:00":
-            schedule = await my_db.get_schedule_for_date()
-
-            if schedule:
-                for user_tgid in schedule['users']:
-                    message_text = "Напоминание‼️\nВаша комната сегодня убирается"
-                    await bot.send_message(chat_id=user_tgid, text=message_text)
-
-                # for duty_id in schedule['duties']:
-                #     add_duty_room = DutyRoom(
-                #         duty_id=duty_id,
-                #         is_approved=False,
-                #         is_sent=False
-                #     )
-                #     await my_db.add_instance(add_duty_room)
-            await asyncio.sleep(60)
-        elif current_time_str == "01:00":
-            schedule = await my_db.get_schedule_for_date()
-            current_duty = schedule['duties']
-            duties = [
-                await my_db.query_one(Duty, id=i) for i in current_duty
-            ]
-            print(duties)
-            pprint(schedule)
-            print("DUTIES", duties)
-            for duty in duties:
-                try:
-                    users = await my_db.get_users_in_room(duty.room_id)
-                    room_number = await my_db.get_room_number_by_id(duty.room_id)
-                    supervisor = await my_db.get_supervisor_tgid_by_resident_tgid(users[0].tgid)
-                    # TODO функция получить комнату по tgid сделать и использовать здесь и везде!!!
-                    supervisor_room_user = await my_db.query_one(RoomUser, user_id=supervisor)
-                    supervisor_full_name = await my_db.get_full_name(supervisor)
-                    supervisor_room = await my_db.query_one(Room, id=supervisor_room_user.room_id)
-                    duty_room = await my_db.query_one(DutyRoom, duty_id=duty.id)
-                    if duty_room and duty_room.is_approved == 0:
-                        await bot.send_message(supervisor, f"Комната {room_number} не убралась")
-                        for user in users:
-                            message_text = (f"Вы не убрались, обратитесь к старосте - {supervisor_full_name}"
-                                            f" в {supervisor_room.number} комнате")
-                            await bot.send_message(chat_id=user.tgid, text=message_text)
-                    else:
-                        for user in users:
-                            message_text = f"Отличная работа! {supervisor_full_name} гордится вами =)"
-                            await bot.send_message(chat_id=user.tgid, text=message_text)
-                except IndexError:
-                    print("Не все данные")
-
-        next_check_time = min(
-            (
-                datetime.combine(now.date(), datetime.strptime(t, "%H:%M").time())
-                if datetime.strptime(t, "%H:%M").time() > now.time()
-                else datetime.combine(now.date() + timedelta(days=1), datetime.strptime(t, "%H:%M").time())
-            )
-            for t in times_for_send
-        )
-        wait_time = (next_check_time - now).total_seconds()
-        await asyncio.sleep(wait_time)
-
-
 async def main() -> None:
     if DEV:
         bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     else:
         bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML),
                   session=AiohttpSession(proxy='http://proxy.server:3128'))
-    asyncio.create_task(check_and_send_notifications(bot))
+
+    scheduler.start()
+    scheduler.add_job(send_notification, args=[bot], trigger=CronTrigger(hour=12, minute=0))
+    scheduler.add_job(send_notification, args=[bot], trigger=CronTrigger(hour=20, minute=0))
+    scheduler.add_job(send_notification, args=[bot], trigger=CronTrigger(hour=22, minute=0))
+
+    scheduler.add_job(update_duties, args=[bot], trigger=CronTrigger(hour=1, minute=0))
+    # scheduler.add_job(send_notification, args=[bot], trigger=IntervalTrigger(seconds=15))
     if not await my_db.is_exist():
         await my_db.initialize()
         await triangle_init(my_db)
